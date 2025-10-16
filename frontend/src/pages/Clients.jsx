@@ -7,10 +7,6 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
   Table,
   TableBody,
   TableCell,
@@ -22,36 +18,35 @@ import {
   Alert,
   CircularProgress,
   Typography,
+  Chip,
 } from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
-import { clientsAPI, salespeopleAPI } from '../api/services';
+import { clientsAPI } from '../api/services';
+import { useSalesperson } from '../context/SalespersonContext';
 
 const Clients = () => {
   const [clients, setClients] = useState([]);
-  const [salespeople, setSalespeople] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
-    phone: '',
-    email: '',
-    address: '',
-    salespersonId: '',
   });
 
+  const { selectedSalesperson, changeSalesperson } = useSalesperson();
+
   useEffect(() => {
-    fetchClients();
-    fetchSalespeople();
-  }, []);
+    if (selectedSalesperson) {
+      fetchClients();
+    }
+  }, [selectedSalesperson]);
 
   const fetchClients = async () => {
     try {
       setLoading(true);
-      const response = await clientsAPI.getAll();
+      const response = await clientsAPI.getAll({ salespersonId: selectedSalesperson.id });
       setClients(response.data);
       setError(null);
     } catch (err) {
@@ -61,33 +56,16 @@ const Clients = () => {
     }
   };
 
-  const fetchSalespeople = async () => {
-    try {
-      const response = await salespeopleAPI.getAll();
-      setSalespeople(response.data);
-    } catch (err) {
-      console.error('Error fetching salespeople:', err);
-    }
-  };
-
   const handleOpenDialog = (client = null) => {
     if (client) {
       setEditingId(client.id);
       setFormData({
         name: client.name,
-        phone: client.phone,
-        email: client.email || '',
-        address: client.address || '',
-        salespersonId: client.salespersonId,
       });
     } else {
       setEditingId(null);
       setFormData({
         name: '',
-        phone: '',
-        email: '',
-        address: '',
-        salespersonId: '',
       });
     }
     setOpenDialog(true);
@@ -98,24 +76,25 @@ const Clients = () => {
     setEditingId(null);
     setFormData({
       name: '',
-      phone: '',
-      email: '',
-      address: '',
-      salespersonId: '',
     });
   };
 
   const handleSubmit = async () => {
-    if (!formData.name.trim() || !formData.phone.trim() || !formData.salespersonId) {
-      setError('Nombre, teléfono y vendedor son requeridos');
+    if (!formData.name.trim()) {
+      setError('El nombre es requerido');
       return;
     }
 
     try {
+      const dataToSubmit = {
+        ...formData,
+        salespersonId: selectedSalesperson.id,
+      };
+
       if (editingId) {
-        await clientsAPI.update(editingId, formData);
+        await clientsAPI.update(editingId, dataToSubmit);
       } else {
-        await clientsAPI.create(formData);
+        await clientsAPI.create(dataToSubmit);
       }
       fetchClients();
       handleCloseDialog();
@@ -138,7 +117,14 @@ const Clients = () => {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">Clientes</Typography>
+        <Box>
+          <Typography variant="h4">Clientes</Typography>
+          {selectedSalesperson && (
+            <Typography variant="body2" sx={{ color: '#2E7D32', fontWeight: 500 }}>
+              Vendedor: {selectedSalesperson.name}
+            </Typography>
+          )}
+        </Box>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
@@ -154,31 +140,39 @@ const Clients = () => {
         <CircularProgress />
       ) : (
         <TableContainer component={Paper}>
-          <Table>
+          <Table size="small">
             <TableHead>
               <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                <TableCell>Nombre</TableCell>
-                <TableCell>Teléfono</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Vendedor</TableCell>
-                <TableCell align="right">Deuda</TableCell>
-                <TableCell align="center">Acciones</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Nombre</TableCell>
+                <TableCell align="right" sx={{ fontWeight: 'bold' }}>Deuda</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 'bold' }}>Última Pago</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 'bold' }}>Eliminar</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {clients.map((item) => (
                 <TableRow key={item.id} sx={item.debt < 50 ? { backgroundColor: '#e8f5e9' } : {}}>
                   <TableCell>{item.name}</TableCell>
-                  <TableCell>{item.phone}</TableCell>
-                  <TableCell>{item.email || '-'}</TableCell>
-                  <TableCell>{item.salesperson?.name || '-'}</TableCell>
-                  <TableCell align="right">€ {item.debt?.toFixed(2) || '0.00'}</TableCell>
+                  <TableCell align="right">
+                    <span style={{ fontSize: '1.1em', fontWeight: 'bold', color: item.debt > 0 ? '#d32f2f' : '#2E7D32' }}>
+                      € {item.debt?.toFixed(2) || '0.00'}
+                    </span>
+                  </TableCell>
                   <TableCell align="center">
-                    <IconButton size="small" onClick={() => handleOpenDialog(item)}>
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton size="small" onClick={() => handleDelete(item.id)}>
-                      <DeleteIcon />
+                    <Chip 
+                      label={item.lastPaymentMonth || '-'} 
+                      size="small" 
+                      variant="outlined"
+                      sx={{ fontSize: '0.85em' }}
+                    />
+                  </TableCell>
+                  <TableCell align="center">
+                    <IconButton 
+                      size="small" 
+                      onClick={() => handleDelete(item.id)}
+                      color="error"
+                    >
+                      <DeleteIcon fontSize="small" />
                     </IconButton>
                   </TableCell>
                 </TableRow>
@@ -190,50 +184,16 @@ const Clients = () => {
 
       <Dialog open={openDialog} onClose={handleCloseDialog}>
         <DialogTitle>{editingId ? 'Editar Cliente' : 'Nuevo Cliente'}</DialogTitle>
-        <DialogContent sx={{ pt: 2, minWidth: '400px' }}>
+        <DialogContent sx={{ pt: 2, minWidth: '300px' }}>
           <TextField
             fullWidth
-            label="Nombre"
+            label="Nombre del Cliente *"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            sx={{ mb: 2 }}
+            placeholder="Ej: Juan García"
+            required
+            autoFocus
           />
-          <TextField
-            fullWidth
-            label="Teléfono"
-            value={formData.phone}
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            fullWidth
-            label="Email"
-            type="email"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            fullWidth
-            label="Dirección"
-            value={formData.address}
-            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-            sx={{ mb: 2 }}
-          />
-          <FormControl fullWidth>
-            <InputLabel>Vendedor</InputLabel>
-            <Select
-              value={formData.salespersonId}
-              label="Vendedor"
-              onChange={(e) => setFormData({ ...formData, salespersonId: e.target.value })}
-            >
-              {salespeople.map((sp) => (
-                <MenuItem key={sp.id} value={sp.id}>
-                  {sp.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancelar</Button>

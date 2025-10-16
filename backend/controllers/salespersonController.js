@@ -5,21 +5,11 @@ import sequelize from '../config/database.js';
 export const getAllSalespeople = async (req, res) => {
   try {
     const salespeople = await Salesperson.findAll({
-      include: [{ model: Client, as: 'clients' }],
+      attributes: ['id', 'name', 'email', 'createdAt', 'updatedAt'],
+      order: [['name', 'ASC']],
     });
 
-    // Calculate total debt for each salesperson
-    const result = await Promise.all(
-      salespeople.map(async (sp) => {
-        const totalDebt = await calculateSalespersonDebt(sp.id);
-        return {
-          ...sp.toJSON(),
-          totalDebt,
-        };
-      })
-    );
-
-    res.json(result);
+    res.json(salespeople);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -11,7 +11,7 @@ export const salespeopleAPI = {
 
 // Clients API
 export const clientsAPI = {
-  getAll: () => axiosInstance.get('/clients'),
+  getAll: (params) => axiosInstance.get('/clients', { params }),
   getById: (id) => axiosInstance.get(`/clients/${id}`),
   create: (data) => axiosInstance.post('/clients', data),
   update: (id, data) => axiosInstance.put(`/clients/${id}`, data),
@@ -20,7 +20,7 @@ export const clientsAPI = {
 
 // Sales API
 export const salesAPI = {
-  getAll: () => axiosInstance.get('/sales'),
+  getAll: (params) => axiosInstance.get('/sales', { params }),
   getById: (id) => axiosInstance.get(`/sales/${id}`),
   create: (data) => axiosInstance.post('/sales', data),
   update: (id, data) => axiosInstance.put(`/sales/${id}`, data),
@@ -30,7 +30,7 @@ export const salesAPI = {
 
 // Payments API
 export const paymentsAPI = {
-  getAll: () => axiosInstance.get('/payments'),
+  getAll: (params) => axiosInstance.get('/payments', { params }),
   getById: (id) => axiosInstance.get(`/payments/${id}`),
   create: (data) => axiosInstance.post('/payments', data),
   update: (id, data) => axiosInstance.put(`/payments/${id}`, data),
@@ -40,10 +40,10 @@ export const paymentsAPI = {
 
 // Dashboard API
 export const dashboardAPI = {
-  getKPIs: () => axiosInstance.get('/dashboard/kpis'),
-  getSalespersonRankings: () => axiosInstance.get('/dashboard/rankings'),
-  getDelinquentClients: () => axiosInstance.get('/dashboard/delinquent'),
-  getSalesOpportunities: () => axiosInstance.get('/dashboard/opportunities'),
+  getKPIs: (params) => axiosInstance.get('/dashboard/kpis', { params }),
+  getSalespersonRankings: (params) => axiosInstance.get('/dashboard/rankings', { params }),
+  getDelinquentClients: (params) => axiosInstance.get('/dashboard/delinquent', { params }),
+  getSalesOpportunities: (params) => axiosInstance.get('/dashboard/opportunities', { params }),
 };
 
 // Import API

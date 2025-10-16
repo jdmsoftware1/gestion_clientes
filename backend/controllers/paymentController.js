@@ -1,14 +1,23 @@
-import { Payment, Client } from '../models/index.js';
+import { Payment, Client, Salesperson } from '../models/index.js';
 
 // Get all payments
 export const getAllPayments = async (req, res) => {
   try {
+    const { salespersonId } = req.query;
+    
+    const include = [{ model: Client, as: 'client', include: [{ model: Salesperson, as: 'salesperson' }] }];
+
     const payments = await Payment.findAll({
-      include: [{ model: Client, as: 'client' }],
+      include,
       order: [['createdAt', 'DESC']],
     });
 
-    res.json(payments);
+    // Filter by salesperson if specified
+    const filtered = salespersonId && salespersonId !== 'TODOS'
+      ? payments.filter(payment => payment.client?.salespersonId === salespersonId)
+      : payments;
+
+    res.json(filtered);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

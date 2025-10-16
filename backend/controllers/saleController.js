@@ -1,14 +1,25 @@
-import { Sale, Client } from '../models/index.js';
+import { Sale, Client, Salesperson } from '../models/index.js';
 
 // Get all sales
 export const getAllSales = async (req, res) => {
   try {
+    const { salespersonId } = req.query;
+    
+    const where = {};
+    const include = [{ model: Client, as: 'client', include: [{ model: Salesperson, as: 'salesperson' }] }];
+
     const sales = await Sale.findAll({
-      include: [{ model: Client, as: 'client' }],
+      include,
+      where,
       order: [['createdAt', 'DESC']],
     });
 
-    res.json(sales);
+    // Filter by salesperson if specified
+    const filtered = salespersonId && salespersonId !== 'TODOS'
+      ? sales.filter(sale => sale.client?.salespersonId === salespersonId)
+      : sales;
+
+    res.json(filtered);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

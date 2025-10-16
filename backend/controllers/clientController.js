@@ -4,22 +4,32 @@ import sequelize from '../config/database.js';
 // Get all clients with calculated debt
 export const getAllClients = async (req, res) => {
   try {
+    const { salespersonId } = req.query;
+    
+    const where = salespersonId ? { salespersonId } : {};
+    
     const clients = await Client.findAll({
-      include: [{ model: Salesperson, as: 'salesperson' }],
+      where,
+      attributes: ['id', 'name', 'phone', 'email', 'address', 'salespersonId', 'createdAt', 'updatedAt'],
+      order: [['name', 'ASC']],
+      raw: true,
     });
 
     const result = await Promise.all(
       clients.map(async (client) => {
         const debt = await calculateClientDebt(client.id);
+        const lastPaymentMonth = await getLastPaymentMonth(client.id);
         return {
-          ...client.toJSON(),
+          ...client,
           debt,
+          lastPaymentMonth,
         };
       })
     );
 
     res.json(result);
   } catch (error) {
+    console.error('Error fetching clients:', error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -41,10 +51,12 @@ export const getClient = async (req, res) => {
     }
 
     const debt = await calculateClientDebt(id);
+    const lastPaymentMonth = await getLastPaymentMonth(id);
 
     res.json({
       ...client.toJSON(),
       debt,
+      lastPaymentMonth,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -56,8 +68,8 @@ export const createClient = async (req, res) => {
   try {
     const { name, phone, email, address, salespersonId } = req.body;
 
-    if (!name || !phone || !salespersonId) {
-      return res.status(400).json({ error: 'Name, phone, and salespersonId are required' });
+    if (!name || !salespersonId) {
+      return res.status(400).json({ error: 'Name and salespersonId are required' });
     }
 
     // Verify salesperson exists
@@ -136,10 +148,24 @@ export async function calculateClientDebt(clientId) {
     FROM clients c
     LEFT JOIN sales s ON c.id = s."clientId"
     LEFT JOIN payments p ON c.id = p."clientId"
-    WHERE c.id = $1
+    WHERE c.id = ?
     `,
     { replacements: [clientId], type: sequelize.QueryTypes.SELECT }
   );
 
-  return parseFloat(result[0].debt) || 0;
+  return parseFloat(result[0]?.debt) || 0;
+}
+
+// Helper function to get last payment month
+export async function getLastPaymentMonth(clientId) {
+  const result = await sequelize.query(
+    `
+    SELECT TO_CHAR(MAX("createdAt"), 'MM/YYYY') as last_month
+    FROM payments
+    WHERE "clientId" = ?
+    `,
+    { replacements: [clientId], type: sequelize.QueryTypes.SELECT }
+  );
+
+  return result[0]?.last_month || '-';
 }

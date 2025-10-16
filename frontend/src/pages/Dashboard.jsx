@@ -14,8 +14,10 @@ import {
   TableRow,
   CircularProgress,
   Alert,
+  Chip,
 } from '@mui/material';
 import { dashboardAPI } from '../api/services';
+import { useSalesperson } from '../context/SalespersonContext';
 
 const DashboardCard = ({ title, value, currency = false }) => (
   <Card sx={{ height: '100%' }}>
@@ -31,6 +33,7 @@ const DashboardCard = ({ title, value, currency = false }) => (
 );
 
 const Dashboard = () => {
+  const { selectedSalesperson } = useSalesperson();
   const [kpis, setKpis] = useState(null);
   const [rankings, setRankings] = useState([]);
   const [delinquent, setDelinquent] = useState([]);
@@ -39,17 +42,21 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    if (selectedSalesperson) {
+      fetchDashboardData();
+    }
+  }, [selectedSalesperson]);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
+      const params = selectedSalesperson?.id !== 'TODOS' ? { salespersonId: selectedSalesperson.id } : {};
+      
       const [kpisData, rankingsData, delinquentData, opportunitiesData] = await Promise.all([
-        dashboardAPI.getKPIs(),
-        dashboardAPI.getSalespersonRankings(),
-        dashboardAPI.getDelinquentClients(),
-        dashboardAPI.getSalesOpportunities(),
+        dashboardAPI.getKPIs(params),
+        dashboardAPI.getSalespersonRankings(params),
+        dashboardAPI.getDelinquentClients(params),
+        dashboardAPI.getSalesOpportunities(params),
       ]);
 
       setKpis(kpisData.data);
@@ -68,9 +75,19 @@ const Dashboard = () => {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 3 }}>
-        Dashboard
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4">
+          Dashboard
+        </Typography>
+        {selectedSalesperson && (
+          <Chip 
+            label={selectedSalesperson.name} 
+            color={selectedSalesperson.id === 'TODOS' ? 'primary' : 'default'}
+            variant="outlined"
+            sx={{ fontSize: '1em', py: 3 }}
+          />
+        )}
+      </Box>
 
       {/* KPIs */}
       <Grid container spacing={2} sx={{ mb: 4 }}>
@@ -145,7 +162,7 @@ const Dashboard = () => {
       {/* Sales Opportunities */}
       <Paper>
         <Typography variant="h6" sx={{ p: 2, fontWeight: 'bold' }}>
-          Oportunidades de Venta (Deuda &lt; 50€)
+          Clientes para Vender (Deuda &lt; 75€)
         </Typography>
         <TableContainer>
           <Table>

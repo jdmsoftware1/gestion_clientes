@@ -4,48 +4,99 @@ import { Salesperson, Client, Sale, Payment } from '../models/index.js';
 // Get dashboard KPIs
 export const getDashboardKPIs = async (req, res) => {
   try {
-    // Total debt
-    const totalDebtResult = await sequelize.query(
-      `
-      SELECT COALESCE(SUM(s.amount), 0) - COALESCE(SUM(p.amount), 0) as total_debt
-      FROM sales s
-      LEFT JOIN payments p ON s."clientId" = p."clientId"
-      `,
-      { type: sequelize.QueryTypes.SELECT }
-    );
+    const { salespersonId } = req.query;
+    
+    if (salespersonId && salespersonId !== 'TODOS') {
+      // Query with filter
+      const totalDebtResult = await sequelize.query(
+        `SELECT 
+          COALESCE(SUM(s.amount), 0) as total_sales,
+          COALESCE(SUM(p.amount), 0) as total_payments
+        FROM clients c
+        LEFT JOIN sales s ON c.id = s."clientId"
+        LEFT JOIN payments p ON c.id = p."clientId"
+        WHERE c."salespersonId" = :salespersonId`,
+        { 
+          replacements: { salespersonId }, 
+          type: sequelize.QueryTypes.SELECT 
+        }
+      );
 
-    const totalDebt = parseFloat(totalDebtResult[0].total_debt) || 0;
+      const last30DaysSalesResult = await sequelize.query(
+        `SELECT COALESCE(SUM(s.amount), 0) as total_sales
+        FROM sales s
+        LEFT JOIN clients c ON s."clientId" = c.id
+        WHERE s."createdAt" >= NOW() - INTERVAL '30 days'
+        AND c."salespersonId" = :salespersonId`,
+        { 
+          replacements: { salespersonId }, 
+          type: sequelize.QueryTypes.SELECT 
+        }
+      );
 
-    // Sales in last 30 days
-    const last30DaysSalesResult = await sequelize.query(
-      `
-      SELECT COALESCE(SUM(amount), 0) as total_sales
-      FROM sales
-      WHERE "createdAt" >= NOW() - INTERVAL '30 days'
-      `,
-      { type: sequelize.QueryTypes.SELECT }
-    );
+      const last30DaysPaymentsResult = await sequelize.query(
+        `SELECT COALESCE(SUM(p.amount), 0) as total_payments
+        FROM payments p
+        LEFT JOIN clients c ON p."clientId" = c.id
+        WHERE p."createdAt" >= NOW() - INTERVAL '30 days'
+        AND c."salespersonId" = :salespersonId`,
+        { 
+          replacements: { salespersonId }, 
+          type: sequelize.QueryTypes.SELECT 
+        }
+      );
 
-    const totalSalesLast30Days = parseFloat(last30DaysSalesResult[0].total_sales) || 0;
+      const totalSales = parseFloat(totalDebtResult[0]?.total_sales) || 0;
+      const totalPayments = parseFloat(totalDebtResult[0]?.total_payments) || 0;
+      const totalDebt = totalSales - totalPayments;
+      const totalSalesLast30Days = parseFloat(last30DaysSalesResult[0]?.total_sales) || 0;
+      const totalPaymentsLast30Days = parseFloat(last30DaysPaymentsResult[0]?.total_payments) || 0;
 
-    // Payments in last 30 days
-    const last30DaysPaymentsResult = await sequelize.query(
-      `
-      SELECT COALESCE(SUM(amount), 0) as total_payments
-      FROM payments
-      WHERE "createdAt" >= NOW() - INTERVAL '30 days'
-      `,
-      { type: sequelize.QueryTypes.SELECT }
-    );
+      res.json({
+        totalDebt,
+        totalSalesLast30Days,
+        totalPaymentsLast30Days,
+      });
+    } else {
+      // Query without filter (TODOS)
+      const totalDebtResult = await sequelize.query(
+        `SELECT 
+          COALESCE(SUM(s.amount), 0) as total_sales,
+          COALESCE(SUM(p.amount), 0) as total_payments
+        FROM clients c
+        LEFT JOIN sales s ON c.id = s."clientId"
+        LEFT JOIN payments p ON c.id = p."clientId"`,
+        { type: sequelize.QueryTypes.SELECT }
+      );
 
-    const totalPaymentsLast30Days = parseFloat(last30DaysPaymentsResult[0].total_payments) || 0;
+      const last30DaysSalesResult = await sequelize.query(
+        `SELECT COALESCE(SUM(s.amount), 0) as total_sales
+        FROM sales s
+        WHERE s."createdAt" >= NOW() - INTERVAL '30 days'`,
+        { type: sequelize.QueryTypes.SELECT }
+      );
 
-    res.json({
-      totalDebt,
-      totalSalesLast30Days,
-      totalPaymentsLast30Days,
-    });
+      const last30DaysPaymentsResult = await sequelize.query(
+        `SELECT COALESCE(SUM(p.amount), 0) as total_payments
+        FROM payments p
+        WHERE p."createdAt" >= NOW() - INTERVAL '30 days'`,
+        { type: sequelize.QueryTypes.SELECT }
+      );
+
+      const totalSales = parseFloat(totalDebtResult[0]?.total_sales) || 0;
+      const totalPayments = parseFloat(totalDebtResult[0]?.total_payments) || 0;
+      const totalDebt = totalSales - totalPayments;
+      const totalSalesLast30Days = parseFloat(last30DaysSalesResult[0]?.total_sales) || 0;
+      const totalPaymentsLast30Days = parseFloat(last30DaysPaymentsResult[0]?.total_payments) || 0;
+
+      res.json({
+        totalDebt,
+        totalSalesLast30Days,
+        totalPaymentsLast30Days,
+      });
+    }
   } catch (error) {
+    console.error('Error in getDashboardKPIs:', error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -54,8 +105,7 @@ export const getDashboardKPIs = async (req, res) => {
 export const getSalespersonRankings = async (req, res) => {
   try {
     const rankings = await sequelize.query(
-      `
-      SELECT 
+      `SELECT 
         sp.id,
         sp.name,
         sp.email,
@@ -64,8 +114,7 @@ export const getSalespersonRankings = async (req, res) => {
       LEFT JOIN clients c ON sp.id = c."salespersonId"
       LEFT JOIN sales s ON c.id = s."clientId"
       GROUP BY sp.id, sp.name, sp.email
-      ORDER BY total_sold DESC
-      `,
+      ORDER BY total_sold DESC`,
       { type: sequelize.QueryTypes.SELECT }
     );
 
@@ -76,6 +125,7 @@ export const getSalespersonRankings = async (req, res) => {
       }))
     );
   } catch (error) {
+    console.error('Error in getSalespersonRankings:', error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -83,29 +133,38 @@ export const getSalespersonRankings = async (req, res) => {
 // Get delinquent clients (top 10)
 export const getDelinquentClients = async (req, res) => {
   try {
-    const delinquent = await sequelize.query(
-      `
-      SELECT 
-        c.id,
-        c.name,
-        c.phone,
-        c.email,
-        c."salespersonId",
-        sp.name as salesperson_name,
-        COALESCE(SUM(s.amount), 0) - COALESCE(SUM(p.amount), 0) as debt,
-        MAX(p."createdAt") as last_payment_date
-      FROM clients c
-      LEFT JOIN salespeople sp ON c."salespersonId" = sp.id
-      LEFT JOIN sales s ON c.id = s."clientId"
-      LEFT JOIN payments p ON c.id = p."clientId"
-      GROUP BY c.id, c.name, c.phone, c.email, c."salespersonId", sp.name
-      HAVING (COALESCE(SUM(s.amount), 0) - COALESCE(SUM(p.amount), 0) > 0)
-        AND (MAX(p."createdAt") IS NULL OR MAX(p."createdAt") < NOW() - INTERVAL '60 days')
-      ORDER BY debt DESC
-      LIMIT 10
-      `,
-      { type: sequelize.QueryTypes.SELECT }
-    );
+    const { salespersonId } = req.query;
+    let query = `SELECT 
+      c.id,
+      c.name,
+      c.phone,
+      c.email,
+      c."salespersonId",
+      sp.name as salesperson_name,
+      COALESCE(SUM(s.amount), 0) - COALESCE(SUM(p.amount), 0) as debt,
+      MAX(p."createdAt") as last_payment_date
+    FROM clients c
+    LEFT JOIN salespeople sp ON c."salespersonId" = sp.id
+    LEFT JOIN sales s ON c.id = s."clientId"
+    LEFT JOIN payments p ON c.id = p."clientId"`;
+
+    const replacements = {};
+
+    if (salespersonId && salespersonId !== 'TODOS') {
+      query += ` WHERE c."salespersonId" = :salespersonId`;
+      replacements.salespersonId = salespersonId;
+    }
+
+    query += ` GROUP BY c.id, c.name, c.phone, c.email, c."salespersonId", sp.id, sp.name
+    HAVING (COALESCE(SUM(s.amount), 0) - COALESCE(SUM(p.amount), 0) > 0)
+      AND (MAX(p."createdAt") IS NULL OR MAX(p."createdAt") < NOW() - INTERVAL '60 days')
+    ORDER BY debt DESC
+    LIMIT 10`;
+
+    const delinquent = await sequelize.query(query, {
+      replacements,
+      type: sequelize.QueryTypes.SELECT,
+    });
 
     res.json(
       delinquent.map((c) => ({
@@ -114,33 +173,43 @@ export const getDelinquentClients = async (req, res) => {
       }))
     );
   } catch (error) {
+    console.error('Error in getDelinquentClients:', error);
     res.status(500).json({ error: error.message });
   }
 };
 
-// Get sales opportunities (clients with debt < 50€)
+// Get sales opportunities (clients with debt < 75€)
 export const getSalesOpportunities = async (req, res) => {
   try {
-    const opportunities = await sequelize.query(
-      `
-      SELECT 
-        c.id,
-        c.name,
-        c.phone,
-        c.email,
-        c."salespersonId",
-        sp.name as salesperson_name,
-        COALESCE(SUM(s.amount), 0) - COALESCE(SUM(p.amount), 0) as debt
-      FROM clients c
-      LEFT JOIN salespeople sp ON c."salespersonId" = sp.id
-      LEFT JOIN sales s ON c.id = s."clientId"
-      LEFT JOIN payments p ON c.id = p."clientId"
-      GROUP BY c.id, c.name, c.phone, c.email, c."salespersonId", sp.name
-      HAVING (COALESCE(SUM(s.amount), 0) - COALESCE(SUM(p.amount), 0) < 50)
-      ORDER BY debt ASC
-      `,
-      { type: sequelize.QueryTypes.SELECT }
-    );
+    const { salespersonId } = req.query;
+    let query = `SELECT 
+      c.id,
+      c.name,
+      c.phone,
+      c.email,
+      c."salespersonId",
+      sp.name as salesperson_name,
+      COALESCE(SUM(s.amount), 0) - COALESCE(SUM(p.amount), 0) as debt
+    FROM clients c
+    LEFT JOIN salespeople sp ON c."salespersonId" = sp.id
+    LEFT JOIN sales s ON c.id = s."clientId"
+    LEFT JOIN payments p ON c.id = p."clientId"`;
+
+    const replacements = {};
+
+    if (salespersonId && salespersonId !== 'TODOS') {
+      query += ` WHERE c."salespersonId" = :salespersonId`;
+      replacements.salespersonId = salespersonId;
+    }
+
+    query += ` GROUP BY c.id, c.name, c.phone, c.email, c."salespersonId", sp.id, sp.name
+    HAVING (COALESCE(SUM(s.amount), 0) - COALESCE(SUM(p.amount), 0) < 75)
+    ORDER BY debt ASC`;
+
+    const opportunities = await sequelize.query(query, {
+      replacements,
+      type: sequelize.QueryTypes.SELECT,
+    });
 
     res.json(
       opportunities.map((c) => ({
@@ -149,6 +218,7 @@ export const getSalesOpportunities = async (req, res) => {
       }))
     );
   } catch (error) {
+    console.error('Error in getSalesOpportunities:', error);
     res.status(500).json({ error: error.message });
   }
 };

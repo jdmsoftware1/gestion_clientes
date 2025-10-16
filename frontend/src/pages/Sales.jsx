@@ -27,8 +27,10 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import { salesAPI, clientsAPI } from '../api/services';
+import { useSalesperson } from '../context/SalespersonContext';
 
 const Sales = () => {
+  const { selectedSalesperson } = useSalesperson();
   const [sales, setSales] = useState([]);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -42,14 +44,16 @@ const Sales = () => {
   });
 
   useEffect(() => {
-    fetchSales();
-    fetchClients();
-  }, []);
+    if (selectedSalesperson) {
+      fetchSales();
+      fetchClients();
+    }
+  }, [selectedSalesperson]);
 
   const fetchSales = async () => {
     try {
       setLoading(true);
-      const response = await salesAPI.getAll();
+      const response = await salesAPI.getAll({ salespersonId: selectedSalesperson.id });
       setSales(response.data);
       setError(null);
     } catch (err) {
@@ -61,7 +65,7 @@ const Sales = () => {
 
   const fetchClients = async () => {
     try {
-      const response = await clientsAPI.getAll();
+      const response = await clientsAPI.getAll({ salespersonId: selectedSalesperson.id });
       setClients(response.data);
     } catch (err) {
       console.error('Error fetching clients:', err);
@@ -134,7 +138,14 @@ const Sales = () => {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">Ventas</Typography>
+        <Box>
+          <Typography variant="h4">Ventas</Typography>
+          {selectedSalesperson && (
+            <Typography variant="body2" sx={{ color: '#2E7D32', fontWeight: 500 }}>
+              Vendedor: {selectedSalesperson.name}
+            </Typography>
+          )}
+        </Box>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
