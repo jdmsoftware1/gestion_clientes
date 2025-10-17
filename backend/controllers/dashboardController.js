@@ -90,9 +90,9 @@ export const getSalespersonRankings = async (req, res) => {
     const replacements = {};
     
     if (dateFrom && dateTo) {
-      dateFilter = 'AND s.created_at >= :dateFrom AND s.created_at <= :dateTo';
+      dateFilter = 'AND s.created_at >= :dateFrom AND s.created_at <= :dateToEnd';
       replacements.dateFrom = dateFrom;
-      replacements.dateTo = dateTo;
+      replacements.dateToEnd = dateTo + ' 23:59:59';
     }
     
     const rankings = await sequelize.query(
@@ -132,9 +132,9 @@ export const getCollectorsRankings = async (req, res) => {
     const replacements = {};
     
     if (dateFrom && dateTo) {
-      dateFilter = 'AND p.created_at >= :dateFrom AND p.created_at <= :dateTo';
+      dateFilter = 'AND p.created_at >= :dateFrom AND p.created_at <= :dateToEnd';
       replacements.dateFrom = dateFrom;
-      replacements.dateTo = dateTo;
+      replacements.dateToEnd = dateTo + ' 23:59:59';
     }
     
     const rankings = await sequelize.query(

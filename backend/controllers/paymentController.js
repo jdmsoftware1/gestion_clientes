@@ -1,4 +1,5 @@
 import { Payment, Client, Salesperson } from '../models/index.js';
+import { transformDatesForFrontend } from '../utils/transformDates.js';
 
 // Get all payments
 export const getAllPayments = async (req, res) => {
@@ -10,6 +11,7 @@ export const getAllPayments = async (req, res) => {
     const payments = await Payment.findAll({
       include,
       order: [['created_at', 'DESC']],
+      raw: false,
     });
 
     // Filter by salesperson if specified
@@ -17,7 +19,10 @@ export const getAllPayments = async (req, res) => {
       ? payments.filter(payment => payment.client?.salespersonId === salespersonId)
       : payments;
 
-    res.json(filtered);
+    // Transform dates to camelCase for frontend
+    const transformed = transformDatesForFrontend(filtered);
+
+    res.json(transformed);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -31,9 +36,13 @@ export const getPaymentsByClient = async (req, res) => {
       where: { clientId },
       include: [{ model: Client, as: 'client' }],
       order: [['created_at', 'DESC']],
+      raw: false,
     });
 
-    res.json(payments);
+    // Transform dates to camelCase for frontend
+    const transformed = transformDatesForFrontend(payments);
+
+    res.json(transformed);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

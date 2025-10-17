@@ -9,9 +9,12 @@ export const getAllClosures = async (req, res) => {
     
     let where = {};
     
-    // Filtro por vendedor
+    // Filtro por vendedor - incluir cierres globales (salespersonId null) y específicos del vendedor
     if (salespersonId && salespersonId !== 'TODOS') {
-      where.salespersonId = salespersonId;
+      where[Op.or] = [
+        { salespersonId: salespersonId },
+        { salespersonId: { [Op.is]: null } }
+      ];
     }
     
     // Filtro por búsqueda en nombre
@@ -19,27 +22,10 @@ export const getAllClosures = async (req, res) => {
       where.name = { [Op.iLike]: `%${search}%` };
     }
     
-    // Filtro por rango de fechas
-    if (dateFrom && dateTo) {
-      where[Op.or] = [
-        {
-          dateFrom: {
-            [Op.between]: [dateFrom, dateTo]
-          }
-        },
-        {
-          dateTo: {
-            [Op.between]: [dateFrom, dateTo]
-          }
-        },
-        {
-          [Op.and]: [
-            { dateFrom: { [Op.lte]: dateFrom } },
-            { dateTo: { [Op.gte]: dateTo } }
-          ]
-        }
-      ];
-    }
+    // Nota: Filtro por rango de fechas comentado temporalmente para debugging
+    // if (dateFrom && dateTo) {
+    //   // Implementar filtro de fechas si es necesario
+    // }
     
     const closures = await MonthClosure.findAll({
       where,
