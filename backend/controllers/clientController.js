@@ -1,16 +1,26 @@
 import { Client, Salesperson, Sale, Payment } from '../models/index.js';
 import sequelize from '../config/database.js';
+import { Op } from 'sequelize';
 
 // Get all clients with calculated debt
 export const getAllClients = async (req, res) => {
   try {
-    const { salespersonId } = req.query;
+    const { salespersonId, search } = req.query;
     
-    const where = salespersonId ? { salespersonId } : {};
+    let where = salespersonId ? { salespersonId } : {};
+    
+    // Add search filter for name, id, or internalCode
+    if (search) {
+      where[Op.or] = [
+        { name: { [Op.iLike]: `%${search}%` } },
+        { internalCode: { [Op.iLike]: `%${search}%` } },
+        { id: { [Op.iLike]: `%${search}%` } },
+      ];
+    }
     
     const clients = await Client.findAll({
       where,
-      attributes: ['id', 'name', 'phone', 'email', 'address', 'salespersonId', 'createdAt', 'updatedAt'],
+      attributes: ['id', 'internalCode', 'name', 'phone', 'email', 'address', 'salespersonId', 'createdAt', 'updatedAt'],
       order: [['name', 'ASC']],
       raw: true,
     });
@@ -66,7 +76,7 @@ export const getClient = async (req, res) => {
 // Create client
 export const createClient = async (req, res) => {
   try {
-    const { name, phone, email, address, salespersonId } = req.body;
+    const { name, phone, email, address, salespersonId, internalCode } = req.body;
 
     if (!name || !salespersonId) {
       return res.status(400).json({ error: 'Name and salespersonId are required' });
@@ -84,6 +94,7 @@ export const createClient = async (req, res) => {
       email,
       address,
       salespersonId,
+      internalCode,
     });
 
     res.status(201).json(client);
@@ -96,7 +107,7 @@ export const createClient = async (req, res) => {
 export const updateClient = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, phone, email, address, salespersonId } = req.body;
+    const { name, phone, email, address, salespersonId, internalCode } = req.body;
 
     const client = await Client.findByPk(id);
     if (!client) {
@@ -116,6 +127,7 @@ export const updateClient = async (req, res) => {
       email,
       address,
       salespersonId,
+      internalCode,
     });
 
     res.json(client);

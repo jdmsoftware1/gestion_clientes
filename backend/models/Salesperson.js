@@ -19,9 +19,16 @@ const Salesperson = sequelize.define('Salesperson', {
       isEmail: true,
     },
   },
+  internalCode: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    unique: true,
+  },
 }, {
   timestamps: true,
   tableName: 'salespeople',
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
 });
 
 export default Salesperson;

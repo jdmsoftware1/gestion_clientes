@@ -8,6 +8,8 @@
     "dev": "node --watch server.js",
     "start": "node server.js",
     "migrate": "node scripts/migrate.js",
+    "migrate:old-db": "node scripts/migrateFromOldDB.js",
+    "migrate:sales": "node scripts/migrateFromOldDB_Sales.js",
     "seed": "node scripts/seed.js",
     "test": "node test/endpoints.test.js",
     "test:complete": "node test/complete.test.js"

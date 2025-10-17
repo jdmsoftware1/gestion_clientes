@@ -8,6 +8,10 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
   protocol: 'postgres',
   logging: process.env.NODE_ENV === 'development' ? console.log : false,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  define: {
+    timestamps: true,
+    underscored: true,
+  },
 });
 
 export default sequelize;

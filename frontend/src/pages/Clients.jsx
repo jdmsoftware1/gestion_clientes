@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   Box,
   Button,
@@ -21,6 +21,7 @@ import {
   Chip,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import { clientsAPI } from '../api/services';
 import { useSalesperson } from '../context/SalespersonContext';
@@ -31,11 +32,25 @@ const Clients = () => {
   const [error, setError] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [searchText, setSearchText] = useState('');
   const [formData, setFormData] = useState({
     name: '',
+    internalCode: '',
   });
 
   const { selectedSalesperson, changeSalesperson } = useSalesperson();
+
+  // Filtrar clientes según búsqueda
+  const filteredClients = useMemo(() => {
+    if (!searchText.trim()) return clients;
+    
+    const searchLower = searchText.toLowerCase();
+    return clients.filter(client =>
+      client.name?.toLowerCase().includes(searchLower) ||
+      client.internalCode?.toLowerCase().includes(searchLower) ||
+      client.id?.toString().includes(searchLower)
+    );
+  }, [clients, searchText]);
 
   useEffect(() => {
     if (selectedSalesperson) {
@@ -61,11 +76,13 @@ const Clients = () => {
       setEditingId(client.id);
       setFormData({
         name: client.name,
+        internalCode: client.internalCode || '',
       });
     } else {
       setEditingId(null);
       setFormData({
         name: '',
+        internalCode: '',
       });
     }
     setOpenDialog(true);
@@ -76,6 +93,7 @@ const Clients = () => {
     setEditingId(null);
     setFormData({
       name: '',
+      internalCode: '',
     });
   };
 
@@ -139,61 +157,110 @@ const Clients = () => {
       {loading ? (
         <CircularProgress />
       ) : (
-        <TableContainer component={Paper}>
-          <Table size="small">
-            <TableHead>
-              <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                <TableCell sx={{ fontWeight: 'bold' }}>Nombre</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 'bold' }}>Deuda</TableCell>
-                <TableCell align="center" sx={{ fontWeight: 'bold' }}>Última Pago</TableCell>
-                <TableCell align="center" sx={{ fontWeight: 'bold' }}>Eliminar</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {clients.map((item) => (
-                <TableRow key={item.id} sx={item.debt < 50 ? { backgroundColor: '#e8f5e9' } : {}}>
-                  <TableCell>{item.name}</TableCell>
-                  <TableCell align="right">
-                    <span style={{ fontSize: '1.1em', fontWeight: 'bold', color: item.debt > 0 ? '#d32f2f' : '#2E7D32' }}>
-                      € {item.debt?.toFixed(2) || '0.00'}
-                    </span>
-                  </TableCell>
-                  <TableCell align="center">
-                    <Chip 
-                      label={item.lastPaymentMonth || '-'} 
-                      size="small" 
-                      variant="outlined"
-                      sx={{ fontSize: '0.85em' }}
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    <IconButton 
-                      size="small" 
-                      onClick={() => handleDelete(item.id)}
-                      color="error"
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </TableCell>
+        <>
+          <Box sx={{ mb: 2 }}>
+            <TextField
+              placeholder="Buscar por nombre, código interno o ID..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              fullWidth
+              size="small"
+              variant="outlined"
+              sx={{ backgroundColor: '#fafafa' }}
+            />
+          </Box>
+
+          <TableContainer component={Paper}>
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Código</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Nombre</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 'bold' }}>Deuda</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 'bold' }}>Última Pago</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 'bold' }}>Acciones</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+              <TableBody>
+                {filteredClients.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} align="center" sx={{ py: 3, color: '#999' }}>
+                      No se encontraron clientes
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredClients.map((item) => (
+                    <TableRow key={item.id} sx={item.debt < 50 ? { backgroundColor: '#e8f5e9' } : {}}>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ fontWeight: 500, color: '#1976d2' }}>
+                          {item.internalCode || '-'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>{item.name}</TableCell>
+                      <TableCell align="right">
+                        <span style={{ fontSize: '1.1em', fontWeight: 'bold', color: item.debt > 0 ? '#d32f2f' : '#2E7D32' }}>
+                          € {item.debt?.toFixed(2) || '0.00'}
+                        </span>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Chip 
+                          label={item.lastPaymentMonth || '-'} 
+                          size="small" 
+                          variant="outlined"
+                          sx={{ fontSize: '0.85em' }}
+                        />
+                      </TableCell>
+                      <TableCell align="center">
+                        <IconButton 
+                          size="small" 
+                          onClick={() => handleOpenDialog(item)}
+                          color="primary"
+                          title="Editar"
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton 
+                          size="small" 
+                          onClick={() => handleDelete(item.id)}
+                          color="error"
+                          title="Eliminar"
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </>
       )}
 
-      <Dialog open={openDialog} onClose={handleCloseDialog}>
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle>{editingId ? 'Editar Cliente' : 'Nuevo Cliente'}</DialogTitle>
-        <DialogContent sx={{ pt: 2, minWidth: '300px' }}>
-          <TextField
-            fullWidth
-            label="Nombre del Cliente *"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="Ej: Juan García"
-            required
-            autoFocus
-          />
+        <DialogContent sx={{ pt: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              fullWidth
+              label="Código Interno"
+              value={formData.internalCode}
+              onChange={(e) => setFormData({ ...formData, internalCode: e.target.value })}
+              placeholder="Ej: CLI-001"
+              helperText="Código por el que suele filtrar (opcional)"
+              size="small"
+            />
+            <TextField
+              fullWidth
+              label="Nombre del Cliente *"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="Ej: Juan García"
+              required
+              autoFocus
+              size="small"
+            />
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancelar</Button>

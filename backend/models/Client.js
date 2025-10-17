@@ -7,6 +7,11 @@ const Client = sequelize.define('Client', {
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true,
   },
+  internalCode: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    unique: true,
+  },
   name: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -26,17 +31,11 @@ const Client = sequelize.define('Client', {
     type: DataTypes.STRING,
     allowNull: true,
   },
-  salespersonId: {
-    type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'salespeople',
-      key: 'id',
-    },
-  },
 }, {
   timestamps: true,
   tableName: 'clients',
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
 });
 
 export default Client;

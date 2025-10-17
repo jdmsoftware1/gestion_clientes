@@ -67,6 +67,30 @@ Sequelize sincronizará automáticamente al iniciar. Para limpiar y recrear:
 npm run migrate
 ```
 
+#### 2.4 Scripts de Migración de Datos
+
+El proyecto incluye scripts para migrar datos existentes:
+
+**Migración desde archivo SQL (tiendaNew.sql):**
+
+```bash
+# Migrar todos los datos desde el archivo SQL
+node scripts/migrateSqlDataFixed.js
+```
+
+**Crear datos de prueba:**
+
+```bash
+# Crear datos de prueba para desarrollo
+node scripts/seedTestData.js
+```
+
+**Notas importantes:**
+- El script de migración SQL procesará automáticamente clientes, vendedores, ventas y pagos
+- Los clientes mantendrán su `internalCode` original para referencia
+- Las fechas se preservan del archivo original
+- Se crean vendedores automáticamente si no existen
+
 ### 3. Configurar Frontend
 
 ```bash

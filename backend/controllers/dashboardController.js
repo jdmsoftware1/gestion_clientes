@@ -4,7 +4,7 @@ import { Salesperson, Client, Sale, Payment } from '../models/index.js';
 // Get dashboard KPIs
 export const getDashboardKPIs = async (req, res) => {
   try {
-    const { salespersonId } = req.query;
+    const { salespersonId, dateFrom, dateTo } = req.query;
     
     if (salespersonId && salespersonId !== 'TODOS') {
       // Query with filter
@@ -13,9 +13,9 @@ export const getDashboardKPIs = async (req, res) => {
           COALESCE(SUM(s.amount), 0) as total_sales,
           COALESCE(SUM(p.amount), 0) as total_payments
         FROM clients c
-        LEFT JOIN sales s ON c.id = s."clientId"
-        LEFT JOIN payments p ON c.id = p."clientId"
-        WHERE c."salespersonId" = :salespersonId`,
+        LEFT JOIN sales s ON c.id = s.client_id
+        LEFT JOIN payments p ON c.id = p.client_id
+        WHERE c.salesperson_id = :salespersonId`,
         { 
           replacements: { salespersonId }, 
           type: sequelize.QueryTypes.SELECT 
@@ -25,9 +25,9 @@ export const getDashboardKPIs = async (req, res) => {
       const last30DaysSalesResult = await sequelize.query(
         `SELECT COALESCE(SUM(s.amount), 0) as total_sales
         FROM sales s
-        LEFT JOIN clients c ON s."clientId" = c.id
-        WHERE s."createdAt" >= NOW() - INTERVAL '30 days'
-        AND c."salespersonId" = :salespersonId`,
+        LEFT JOIN clients c ON s.client_id = c.id
+        WHERE s.created_at >= NOW() - INTERVAL '30 days'
+        AND c.salesperson_id = :salespersonId`,
         { 
           replacements: { salespersonId }, 
           type: sequelize.QueryTypes.SELECT 
@@ -37,9 +37,9 @@ export const getDashboardKPIs = async (req, res) => {
       const last30DaysPaymentsResult = await sequelize.query(
         `SELECT COALESCE(SUM(p.amount), 0) as total_payments
         FROM payments p
-        LEFT JOIN clients c ON p."clientId" = c.id
-        WHERE p."createdAt" >= NOW() - INTERVAL '30 days'
-        AND c."salespersonId" = :salespersonId`,
+        LEFT JOIN clients c ON p.client_id = c.id
+        WHERE p.created_at >= NOW() - INTERVAL '30 days'
+        AND c.salesperson_id = :salespersonId`,
         { 
           replacements: { salespersonId }, 
           type: sequelize.QueryTypes.SELECT 
@@ -64,22 +64,22 @@ export const getDashboardKPIs = async (req, res) => {
           COALESCE(SUM(s.amount), 0) as total_sales,
           COALESCE(SUM(p.amount), 0) as total_payments
         FROM clients c
-        LEFT JOIN sales s ON c.id = s."clientId"
-        LEFT JOIN payments p ON c.id = p."clientId"`,
+        LEFT JOIN sales s ON c.id = s.client_id
+        LEFT JOIN payments p ON c.id = p.client_id`,
         { type: sequelize.QueryTypes.SELECT }
       );
 
       const last30DaysSalesResult = await sequelize.query(
         `SELECT COALESCE(SUM(s.amount), 0) as total_sales
         FROM sales s
-        WHERE s."createdAt" >= NOW() - INTERVAL '30 days'`,
+        WHERE s.created_at >= NOW() - INTERVAL '30 days'`,
         { type: sequelize.QueryTypes.SELECT }
       );
 
       const last30DaysPaymentsResult = await sequelize.query(
         `SELECT COALESCE(SUM(p.amount), 0) as total_payments
         FROM payments p
-        WHERE p."createdAt" >= NOW() - INTERVAL '30 days'`,
+        WHERE p.created_at >= NOW() - INTERVAL '30 days'`,
         { type: sequelize.QueryTypes.SELECT }
       );
 
@@ -111,8 +111,8 @@ export const getSalespersonRankings = async (req, res) => {
         sp.email,
         COALESCE(SUM(s.amount), 0) as total_sold
       FROM salespeople sp
-      LEFT JOIN clients c ON sp.id = c."salespersonId"
-      LEFT JOIN sales s ON c.id = s."clientId"
+      LEFT JOIN clients c ON sp.id = c.salesperson_id
+      LEFT JOIN sales s ON c.id = s.client_id
       GROUP BY sp.id, sp.name, sp.email
       ORDER BY total_sold DESC`,
       { type: sequelize.QueryTypes.SELECT }
@@ -139,25 +139,25 @@ export const getDelinquentClients = async (req, res) => {
       c.name,
       c.phone,
       c.email,
-      c."salespersonId",
+      c.salesperson_id,
       sp.name as salesperson_name,
       COALESCE(SUM(s.amount), 0) - COALESCE(SUM(p.amount), 0) as debt,
-      MAX(p."createdAt") as last_payment_date
+      MAX(p.created_at) as last_payment_date
     FROM clients c
-    LEFT JOIN salespeople sp ON c."salespersonId" = sp.id
-    LEFT JOIN sales s ON c.id = s."clientId"
-    LEFT JOIN payments p ON c.id = p."clientId"`;
+    LEFT JOIN salespeople sp ON c.salesperson_id = sp.id
+    LEFT JOIN sales s ON c.id = s.client_id
+    LEFT JOIN payments p ON c.id = p.client_id`;
 
     const replacements = {};
 
     if (salespersonId && salespersonId !== 'TODOS') {
-      query += ` WHERE c."salespersonId" = :salespersonId`;
+      query += ` WHERE c.salesperson_id = :salespersonId`;
       replacements.salespersonId = salespersonId;
     }
 
-    query += ` GROUP BY c.id, c.name, c.phone, c.email, c."salespersonId", sp.id, sp.name
+    query += ` GROUP BY c.id, c.name, c.phone, c.email, c.salesperson_id, sp.id, sp.name
     HAVING (COALESCE(SUM(s.amount), 0) - COALESCE(SUM(p.amount), 0) > 0)
-      AND (MAX(p."createdAt") IS NULL OR MAX(p."createdAt") < NOW() - INTERVAL '60 days')
+      AND (MAX(p.created_at) IS NULL OR MAX(p.created_at) < NOW() - INTERVAL '60 days')
     ORDER BY debt DESC
     LIMIT 10`;
 
@@ -187,22 +187,22 @@ export const getSalesOpportunities = async (req, res) => {
       c.name,
       c.phone,
       c.email,
-      c."salespersonId",
+      c.salesperson_id,
       sp.name as salesperson_name,
       COALESCE(SUM(s.amount), 0) - COALESCE(SUM(p.amount), 0) as debt
     FROM clients c
-    LEFT JOIN salespeople sp ON c."salespersonId" = sp.id
-    LEFT JOIN sales s ON c.id = s."clientId"
-    LEFT JOIN payments p ON c.id = p."clientId"`;
+    LEFT JOIN salespeople sp ON c.salesperson_id = sp.id
+    LEFT JOIN sales s ON c.id = s.client_id
+    LEFT JOIN payments p ON c.id = p.client_id`;
 
     const replacements = {};
 
     if (salespersonId && salespersonId !== 'TODOS') {
-      query += ` WHERE c."salespersonId" = :salespersonId`;
+      query += ` WHERE c.salesperson_id = :salespersonId`;
       replacements.salespersonId = salespersonId;
     }
 
-    query += ` GROUP BY c.id, c.name, c.phone, c.email, c."salespersonId", sp.id, sp.name
+    query += ` GROUP BY c.id, c.name, c.phone, c.email, c.salesperson_id, sp.id, sp.name
     HAVING (COALESCE(SUM(s.amount), 0) - COALESCE(SUM(p.amount), 0) < 75)
     ORDER BY debt ASC`;
 

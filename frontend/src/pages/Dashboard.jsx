@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   Box,
   Grid,
@@ -15,6 +15,7 @@ import {
   CircularProgress,
   Alert,
   Chip,
+  TextField,
 } from '@mui/material';
 import { dashboardAPI } from '../api/services';
 import { useSalesperson } from '../context/SalespersonContext';
@@ -40,12 +41,42 @@ const Dashboard = () => {
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Search filters
+  const [delinquentSearch, setDelinquentSearch] = useState('');
+  const [opportunitiesSearch, setOpportunitiesSearch] = useState('');
+  const [minDebt, setMinDebt] = useState('');
+  const [maxDebt, setMaxDebt] = useState('');
 
   useEffect(() => {
     if (selectedSalesperson) {
       fetchDashboardData();
     }
   }, [selectedSalesperson]);
+  
+  // Filter delinquent clients
+  const filteredDelinquent = useMemo(() => {
+    return delinquent.filter(item => {
+      const nameMatch = item.name.toLowerCase().includes(delinquentSearch.toLowerCase()) ||
+                       item.salesperson_name.toLowerCase().includes(delinquentSearch.toLowerCase());
+      const debt = parseFloat(item.debt);
+      const minMatch = minDebt === '' || debt >= parseFloat(minDebt);
+      const maxMatch = maxDebt === '' || debt <= parseFloat(maxDebt);
+      return nameMatch && minMatch && maxMatch;
+    });
+  }, [delinquent, delinquentSearch, minDebt, maxDebt]);
+  
+  // Filter opportunities
+  const filteredOpportunities = useMemo(() => {
+    return opportunities.filter(item => {
+      const nameMatch = item.name.toLowerCase().includes(opportunitiesSearch.toLowerCase()) ||
+                       item.salesperson_name.toLowerCase().includes(opportunitiesSearch.toLowerCase());
+      const debt = parseFloat(item.debt);
+      const minMatch = minDebt === '' || debt >= parseFloat(minDebt);
+      const maxMatch = maxDebt === '' || debt <= parseFloat(maxDebt);
+      return nameMatch && minMatch && maxMatch;
+    });
+  }, [opportunities, opportunitiesSearch, minDebt, maxDebt]);
 
   const fetchDashboardData = async () => {
     try {
@@ -132,9 +163,38 @@ const Dashboard = () => {
 
       {/* Delinquent Clients */}
       <Paper sx={{ mb: 4 }}>
-        <Typography variant="h6" sx={{ p: 2, fontWeight: 'bold' }}>
-          Clientes Morosos (Top 10)
-        </Typography>
+        <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+            Clientes Morosos (Top 10)
+          </Typography>
+        </Box>
+        <Box sx={{ p: 2, display: 'flex', gap: 2, flexWrap: 'wrap', borderBottom: '1px solid #eee' }}>
+          <TextField
+            size="small"
+            placeholder="Buscar por nombre o vendedor"
+            value={delinquentSearch}
+            onChange={(e) => setDelinquentSearch(e.target.value)}
+            sx={{ flex: 1, minWidth: '200px' }}
+          />
+          <TextField
+            size="small"
+            placeholder="Deuda mín"
+            type="number"
+            value={minDebt}
+            onChange={(e) => setMinDebt(e.target.value)}
+            inputProps={{ step: '0.01' }}
+            sx={{ width: '120px' }}
+          />
+          <TextField
+            size="small"
+            placeholder="Deuda máx"
+            type="number"
+            value={maxDebt}
+            onChange={(e) => setMaxDebt(e.target.value)}
+            inputProps={{ step: '0.01' }}
+            sx={{ width: '120px' }}
+          />
+        </Box>
         <TableContainer>
           <Table>
             <TableHead>
@@ -146,7 +206,7 @@ const Dashboard = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {delinquent.map((item, idx) => (
+              {filteredDelinquent.map((item, idx) => (
                 <TableRow key={idx} sx={{ backgroundColor: '#ffebee' }}>
                   <TableCell>{item.name}</TableCell>
                   <TableCell>{item.phone}</TableCell>
@@ -161,9 +221,38 @@ const Dashboard = () => {
 
       {/* Sales Opportunities */}
       <Paper>
-        <Typography variant="h6" sx={{ p: 2, fontWeight: 'bold' }}>
-          Clientes para Vender (Deuda &lt; 75€)
-        </Typography>
+        <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+            Clientes para Vender (Deuda &lt; 75€)
+          </Typography>
+        </Box>
+        <Box sx={{ p: 2, display: 'flex', gap: 2, flexWrap: 'wrap', borderBottom: '1px solid #eee' }}>
+          <TextField
+            size="small"
+            placeholder="Buscar por nombre o vendedor"
+            value={opportunitiesSearch}
+            onChange={(e) => setOpportunitiesSearch(e.target.value)}
+            sx={{ flex: 1, minWidth: '200px' }}
+          />
+          <TextField
+            size="small"
+            placeholder="Deuda mín"
+            type="number"
+            value={minDebt}
+            onChange={(e) => setMinDebt(e.target.value)}
+            inputProps={{ step: '0.01' }}
+            sx={{ width: '120px' }}
+          />
+          <TextField
+            size="small"
+            placeholder="Deuda máx"
+            type="number"
+            value={maxDebt}
+            onChange={(e) => setMaxDebt(e.target.value)}
+            inputProps={{ step: '0.01' }}
+            sx={{ width: '120px' }}
+          />
+        </Box>
         <TableContainer>
           <Table>
             <TableHead>
@@ -175,7 +264,7 @@ const Dashboard = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {opportunities.map((item, idx) => (
+              {filteredOpportunities.map((item, idx) => (
                 <TableRow key={idx} sx={{ backgroundColor: '#e8f5e9' }}>
                   <TableCell>{item.name}</TableCell>
                   <TableCell>{item.phone}</TableCell>

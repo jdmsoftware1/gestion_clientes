@@ -7,10 +7,7 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
+  Autocomplete,
   Table,
   TableBody,
   TableCell,
@@ -196,20 +193,23 @@ const Payments = () => {
       <Dialog open={openDialog} onClose={handleCloseDialog}>
         <DialogTitle>{editingId ? 'Editar Pago' : 'Nuevo Pago'}</DialogTitle>
         <DialogContent sx={{ pt: 2, minWidth: '400px' }}>
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Cliente</InputLabel>
-            <Select
-              value={formData.clientId}
-              label="Cliente"
-              onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
-            >
-              {clients.map((c) => (
-                <MenuItem key={c.id} value={c.id}>
-                  {c.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Autocomplete
+            fullWidth
+            sx={{ mb: 2 }}
+            options={clients}
+            getOptionLabel={(option) => 
+              `${option.internalCode ? `[${option.internalCode}] ` : ''}${option.name}`
+            }
+            value={clients.find(c => c.id === formData.clientId) || null}
+            onChange={(e, value) => setFormData({ ...formData, clientId: value?.id || '' })}
+            renderInput={(params) => <TextField {...params} label="Cliente" />}
+            filterOptions={(options, { inputValue }) => {
+              return options.filter(option =>
+                option.name.toLowerCase().includes(inputValue.toLowerCase()) ||
+                (option.internalCode && option.internalCode.toLowerCase().includes(inputValue.toLowerCase()))
+              );
+            }}
+          />
           <TextField
             fullWidth
             label="Monto"

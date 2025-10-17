@@ -15,25 +15,11 @@ const Payment = sequelize.define('Payment', {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  clientId: {
-    type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'clients',
-      key: 'id',
-    },
-  },
-  createdAt: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
-  },
-  updatedAt: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
-  },
 }, {
   timestamps: true,
   tableName: 'payments',
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
 });
 
 export default Payment;
