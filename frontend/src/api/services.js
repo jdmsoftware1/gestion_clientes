@@ -42,6 +42,7 @@ export const paymentsAPI = {
 export const dashboardAPI = {
   getKPIs: (params) => axiosInstance.get('/dashboard/kpis', { params }),
   getSalespersonRankings: (params) => axiosInstance.get('/dashboard/rankings', { params }),
+  getCollectorsRankings: (params) => axiosInstance.get('/dashboard/collectors', { params }),
   getDelinquentClients: (params) => axiosInstance.get('/dashboard/delinquent', { params }),
   getSalesOpportunities: (params) => axiosInstance.get('/dashboard/opportunities', { params }),
 };
@@ -66,4 +67,10 @@ export const monthClosuresAPI = {
   create: (data) => axiosInstance.post('/month-closures', data),
   update: (id, data) => axiosInstance.put(`/month-closures/${id}`, data),
   delete: (id) => axiosInstance.delete(`/month-closures/${id}`),
+};
+
+// Tests API
+export const testsAPI = {
+  runDashboardTests: () => axiosInstance.get('/tests/dashboard'),
+  testEndpoint: (data) => axiosInstance.post('/tests/endpoint', data),
 };

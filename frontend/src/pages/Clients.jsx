@@ -19,11 +19,15 @@ import {
   CircularProgress,
   Typography,
   Chip,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
-import { clientsAPI } from '../api/services';
+import { clientsAPI, salespeopleAPI } from '../api/services';
 import { useSalesperson } from '../context/SalespersonContext';
 
 const Clients = () => {
@@ -33,9 +37,11 @@ const Clients = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [searchText, setSearchText] = useState('');
+  const [salespeople, setSalespeople] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
     internalCode: '',
+    salespersonId: '',
   });
 
   const { selectedSalesperson, changeSalesperson } = useSalesperson();
@@ -56,7 +62,17 @@ const Clients = () => {
     if (selectedSalesperson) {
       fetchClients();
     }
+    fetchSalespeople();
   }, [selectedSalesperson]);
+
+  const fetchSalespeople = async () => {
+    try {
+      const response = await salespeopleAPI.getAll();
+      setSalespeople(response.data);
+    } catch (err) {
+      console.error('Error fetching salespeople:', err);
+    }
+  };
 
   const fetchClients = async () => {
     try {
@@ -77,12 +93,14 @@ const Clients = () => {
       setFormData({
         name: client.name,
         internalCode: client.internalCode || '',
+        salespersonId: client.salespersonId || selectedSalesperson.id,
       });
     } else {
       setEditingId(null);
       setFormData({
         name: '',
         internalCode: '',
+        salespersonId: selectedSalesperson.id,
       });
     }
     setOpenDialog(true);
@@ -94,6 +112,7 @@ const Clients = () => {
     setFormData({
       name: '',
       internalCode: '',
+      salespersonId: '',
     });
   };
 
@@ -103,10 +122,14 @@ const Clients = () => {
       return;
     }
 
+    if (!formData.salespersonId) {
+      setError('El vendedor es requerido');
+      return;
+    }
+
     try {
       const dataToSubmit = {
         ...formData,
-        salespersonId: selectedSalesperson.id,
       };
 
       if (editingId) {
@@ -260,6 +283,20 @@ const Clients = () => {
               autoFocus
               size="small"
             />
+            <FormControl fullWidth size="small" required>
+              <InputLabel>Vendedor *</InputLabel>
+              <Select
+                value={formData.salespersonId}
+                onChange={(e) => setFormData({ ...formData, salespersonId: e.target.value })}
+                label="Vendedor *"
+              >
+                {salespeople.map((salesperson) => (
+                  <MenuItem key={salesperson.id} value={salesperson.id}>
+                    {salesperson.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Box>
         </DialogContent>
         <DialogActions>

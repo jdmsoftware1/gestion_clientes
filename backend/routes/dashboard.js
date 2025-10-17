@@ -5,6 +5,7 @@ const router = express.Router();
 
 router.get('/kpis', dashboardController.getDashboardKPIs);
 router.get('/rankings', dashboardController.getSalespersonRankings);
+router.get('/collectors', dashboardController.getCollectorsRankings);
 router.get('/delinquent', dashboardController.getDelinquentClients);
 router.get('/opportunities', dashboardController.getSalesOpportunities);
 

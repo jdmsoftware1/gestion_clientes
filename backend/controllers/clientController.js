@@ -36,6 +36,9 @@ export const getAllClients = async (req, res) => {
       })
     );
 
+    // Ordenar por deuda descendente (los que más deben primero)
+    result.sort((a, b) => b.debt - a.debt);
+
     res.json(result);
   } catch (error) {
     console.error('Error fetching clients:', error);

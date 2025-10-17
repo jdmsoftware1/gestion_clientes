@@ -83,6 +83,18 @@ export const getDashboardKPIs = async (req, res) => {
 // Get salesperson rankings
 export const getSalespersonRankings = async (req, res) => {
   try {
+    const { dateFrom, dateTo } = req.query;
+    
+    // Construir filtros de fecha
+    let dateFilter = '';
+    const replacements = {};
+    
+    if (dateFrom && dateTo) {
+      dateFilter = 'AND s.created_at >= :dateFrom AND s.created_at <= :dateTo';
+      replacements.dateFrom = dateFrom;
+      replacements.dateTo = dateTo;
+    }
+    
     const rankings = await sequelize.query(
       `SELECT 
         sp.id,
@@ -92,9 +104,10 @@ export const getSalespersonRankings = async (req, res) => {
       FROM salespeople sp
       LEFT JOIN clients c ON sp.id = c.salesperson_id
       LEFT JOIN sales s ON c.id = s.client_id
+      WHERE 1=1 ${dateFilter}
       GROUP BY sp.id, sp.name, sp.email
       ORDER BY total_sold DESC`,
-      { type: sequelize.QueryTypes.SELECT }
+      { replacements, type: sequelize.QueryTypes.SELECT }
     );
 
     res.json(
@@ -105,6 +118,50 @@ export const getSalespersonRankings = async (req, res) => {
     );
   } catch (error) {
     console.error('Error in getSalespersonRankings:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Get collectors rankings (salespeople with most payments)
+export const getCollectorsRankings = async (req, res) => {
+  try {
+    const { dateFrom, dateTo } = req.query;
+    
+    // Construir filtros de fecha
+    let dateFilter = '';
+    const replacements = {};
+    
+    if (dateFrom && dateTo) {
+      dateFilter = 'AND p.created_at >= :dateFrom AND p.created_at <= :dateTo';
+      replacements.dateFrom = dateFrom;
+      replacements.dateTo = dateTo;
+    }
+    
+    const rankings = await sequelize.query(
+      `SELECT 
+        sp.id,
+        sp.name,
+        sp.email,
+        COALESCE(SUM(p.amount), 0) as total_collected,
+        COUNT(p.id) as payment_count
+      FROM salespeople sp
+      LEFT JOIN clients c ON sp.id = c.salesperson_id
+      LEFT JOIN payments p ON c.id = p.client_id
+      WHERE 1=1 ${dateFilter}
+      GROUP BY sp.id, sp.name, sp.email
+      ORDER BY total_collected DESC`,
+      { replacements, type: sequelize.QueryTypes.SELECT }
+    );
+
+    res.json(
+      rankings.map((r) => ({
+        ...r,
+        total_collected: parseFloat(r.total_collected) || 0,
+        payment_count: parseInt(r.payment_count) || 0,
+      }))
+    );
+  } catch (error) {
+    console.error('Error in getCollectorsRankings:', error);
     res.status(500).json({ error: error.message });
   }
 };

@@ -28,7 +28,7 @@ import {
   MenuItem,
   Autocomplete,
 } from '@mui/material';
-import { dashboardAPI, monthClosuresAPI } from '../api/services';
+import { dashboardAPI, monthClosuresAPI, testsAPI } from '../api/services';
 import { useSalesperson } from '../context/SalespersonContext';
 
 const DashboardCard = ({ title, value, currency = false }) => (
@@ -48,6 +48,7 @@ const Dashboard = () => {
   const { selectedSalesperson } = useSalesperson();
   const [kpis, setKpis] = useState(null);
   const [rankings, setRankings] = useState([]);
+  const [collectors, setCollectors] = useState([]);
   const [delinquent, setDelinquent] = useState([]);
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -70,6 +71,11 @@ const Dashboard = () => {
   const [closureDescription, setClosureDescription] = useState('');
   const [closures, setClosures] = useState([]);
   const [selectedClosure, setSelectedClosure] = useState(null);
+  
+  // Tests states
+  const [openTestsModal, setOpenTestsModal] = useState(false);
+  const [testResults, setTestResults] = useState(null);
+  const [runningTests, setRunningTests] = useState(false);
 
   useEffect(() => {
     if (selectedSalesperson) {
@@ -113,15 +119,17 @@ const Dashboard = () => {
         params.dateTo = dateTo;
       }
       
-      const [kpisData, rankingsData, delinquentData, opportunitiesData] = await Promise.all([
+      const [kpisData, rankingsData, collectorsData, delinquentData, opportunitiesData] = await Promise.all([
         dashboardAPI.getKPIs(params),
         dashboardAPI.getSalespersonRankings(params),
+        dashboardAPI.getCollectorsRankings(params),
         dashboardAPI.getDelinquentClients(params),
         dashboardAPI.getSalesOpportunities(params),
       ]);
 
       setKpis(kpisData.data);
       setRankings(rankingsData.data);
+      setCollectors(collectorsData.data);
       setDelinquent(delinquentData.data);
       setOpportunities(opportunitiesData.data);
       
@@ -229,6 +237,25 @@ const Dashboard = () => {
     }
   };
 
+  // Función para ejecutar tests del dashboard
+  const handleRunTests = async () => {
+    try {
+      setRunningTests(true);
+      setOpenTestsModal(true);
+      const response = await testsAPI.runDashboardTests();
+      setTestResults(response.data);
+    } catch (error) {
+      console.error('Error running tests:', error);
+      setTestResults({
+        summary: { status: 'ERROR', totalTests: 0, passedTests: 0, failedTests: 1 },
+        tests: [{ test: 'Connection Test', status: 'FAIL', message: error.message }],
+        error: error.message
+      });
+    } finally {
+      setRunningTests(false);
+    }
+  };
+
   if (loading) return <CircularProgress />;
   if (error) return <Alert severity="error">{error}</Alert>;
 
@@ -238,14 +265,25 @@ const Dashboard = () => {
         <Typography variant="h4">
           Dashboard
         </Typography>
-        {selectedSalesperson && (
-          <Chip 
-            label={selectedSalesperson.name} 
-            color={selectedSalesperson.id === 'TODOS' ? 'primary' : 'default'}
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Button
             variant="outlined"
-            sx={{ fontSize: '1em', py: 3 }}
-          />
-        )}
+            size="small"
+            onClick={handleRunTests}
+            disabled={runningTests}
+            sx={{ minWidth: '120px' }}
+          >
+            {runningTests ? 'Ejecutando...' : '🧪 Tests'}
+          </Button>
+          {selectedSalesperson && (
+            <Chip 
+              label={selectedSalesperson.name} 
+              color={selectedSalesperson.id === 'TODOS' ? 'primary' : 'default'}
+              variant="outlined"
+              sx={{ fontSize: '1em', py: 3 }}
+            />
+          )}
+        </Box>
       </Box>
 
       {/* Controles de Fecha y Cierres */}
@@ -331,29 +369,61 @@ const Dashboard = () => {
       </Grid>
 
       {/* Rankings */}
-      <Paper sx={{ mb: 4 }}>
-        <Typography variant="h6" sx={{ p: 2, fontWeight: 'bold' }}>
-          Ranking de Vendedores
-        </Typography>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                <TableCell>Vendedor</TableCell>
-                <TableCell align="right">Total Vendido</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {rankings.map((item, idx) => (
-                <TableRow key={idx}>
-                  <TableCell>{item.name}</TableCell>
-                  <TableCell align="right">€ {parseFloat(item.total_sold).toFixed(2)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} md={6}>
+          <Paper>
+            <Typography variant="h6" sx={{ p: 2, fontWeight: 'bold' }}>
+              Ranking de Vendedores ({periodLabel})
+            </Typography>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                    <TableCell>Vendedor</TableCell>
+                    <TableCell align="right">Total Vendido</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {rankings.map((item, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell>{item.name}</TableCell>
+                      <TableCell align="right">€ {parseFloat(item.total_sold).toFixed(2)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
+        </Grid>
+        
+        <Grid item xs={12} md={6}>
+          <Paper>
+            <Typography variant="h6" sx={{ p: 2, fontWeight: 'bold' }}>
+              Ranking de Cobradores ({periodLabel})
+            </Typography>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                    <TableCell>Vendedor</TableCell>
+                    <TableCell align="right">Total Cobrado</TableCell>
+                    <TableCell align="right">Pagos</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {collectors.map((item, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell>{item.name}</TableCell>
+                      <TableCell align="right">€ {parseFloat(item.total_collected).toFixed(2)}</TableCell>
+                      <TableCell align="right">{item.payment_count}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
+        </Grid>
+      </Grid>
 
       {/* Delinquent Clients */}
       <Paper sx={{ mb: 4 }}>
@@ -516,6 +586,112 @@ const Dashboard = () => {
             disabled={!closureName.trim()}
           >
             Crear Cierre
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de Tests */}
+      <Dialog 
+        open={openTestsModal} 
+        onClose={() => setOpenTestsModal(false)} 
+        maxWidth="md" 
+        fullWidth
+        PaperProps={{ sx: { maxHeight: '80vh' } }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6">🧪 Batería de Tests del Dashboard</Typography>
+          {testResults?.summary && (
+            <Chip 
+              label={`${testResults.summary.passedTests}/${testResults.summary.totalTests} Tests`}
+              color={testResults.summary.status === 'ALL_PASS' ? 'success' : 
+                     testResults.summary.status === 'MOSTLY_PASS' ? 'warning' : 'error'}
+              variant="outlined"
+            />
+          )}
+        </DialogTitle>
+        <DialogContent dividers>
+          {runningTests ? (
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4 }}>
+              <CircularProgress size={60} />
+              <Typography sx={{ mt: 2 }}>Ejecutando tests...</Typography>
+            </Box>
+          ) : testResults ? (
+            <Box>
+              {/* Resumen */}
+              <Paper sx={{ p: 2, mb: 3, backgroundColor: 
+                testResults.summary.status === 'ALL_PASS' ? '#e8f5e8' : 
+                testResults.summary.status === 'MOSTLY_PASS' ? '#fff3e0' : '#ffebee'
+              }}>
+                <Typography variant="h6" gutterBottom>
+                  📊 Resumen: {testResults.summary.successRate} de éxito
+                </Typography>
+                <Typography variant="body2">
+                  ✅ Pasados: {testResults.summary.passedTests} | 
+                  ❌ Fallidos: {testResults.summary.failedTests} | 
+                  📅 {new Date(testResults.timestamp).toLocaleString()}
+                </Typography>
+              </Paper>
+
+              {/* Lista de Tests */}
+              <Typography variant="h6" gutterBottom>Resultados Detallados:</Typography>
+              {testResults.tests.map((test, index) => (
+                <Paper 
+                  key={index} 
+                  sx={{ 
+                    p: 2, 
+                    mb: 1, 
+                    border: `1px solid ${test.status === 'PASS' ? '#4caf50' : '#f44336'}`,
+                    backgroundColor: test.status === 'PASS' ? '#f1f8e9' : '#ffebee'
+                  }}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                        {test.status === 'PASS' ? '✅' : '❌'} {test.test}
+                      </Typography>
+                      {test.message && (
+                        <Typography variant="body2" sx={{ mt: 0.5, color: '#666' }}>
+                          {test.message}
+                        </Typography>
+                      )}
+                      {test.data && (
+                        <Typography variant="caption" sx={{ mt: 0.5, display: 'block', fontFamily: 'monospace' }}>
+                          {JSON.stringify(test.data, null, 2)}
+                        </Typography>
+                      )}
+                    </Box>
+                    <Chip 
+                      label={test.status} 
+                      size="small"
+                      color={test.status === 'PASS' ? 'success' : 'error'}
+                      variant="outlined"
+                    />
+                  </Box>
+                </Paper>
+              ))}
+
+              {testResults.error && (
+                <Alert severity="error" sx={{ mt: 2 }}>
+                  <Typography variant="body2">
+                    <strong>Error General:</strong> {testResults.error}
+                  </Typography>
+                </Alert>
+              )}
+            </Box>
+          ) : (
+            <Typography>No hay resultados de tests disponibles.</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenTestsModal(false)}>
+            Cerrar
+          </Button>
+          <Button 
+            onClick={handleRunTests} 
+            variant="contained"
+            disabled={runningTests}
+          >
+            {runningTests ? 'Ejecutando...' : 'Ejecutar Tests'}
           </Button>
         </DialogActions>
       </Dialog>
