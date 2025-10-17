@@ -6,95 +6,74 @@ export const getDashboardKPIs = async (req, res) => {
   try {
     const { salespersonId, dateFrom, dateTo } = req.query;
     
-    if (salespersonId && salespersonId !== 'TODOS') {
-      // Query with filter
-      const totalDebtResult = await sequelize.query(
-        `SELECT 
-          COALESCE(SUM(s.amount), 0) as total_sales,
-          COALESCE(SUM(p.amount), 0) as total_payments
-        FROM clients c
-        LEFT JOIN sales s ON c.id = s.client_id
-        LEFT JOIN payments p ON c.id = p.client_id
-        WHERE c.salesperson_id = :salespersonId`,
-        { 
-          replacements: { salespersonId }, 
-          type: sequelize.QueryTypes.SELECT 
-        }
-      );
-
-      const last30DaysSalesResult = await sequelize.query(
-        `SELECT COALESCE(SUM(s.amount), 0) as total_sales
-        FROM sales s
-        LEFT JOIN clients c ON s.client_id = c.id
-        WHERE s.created_at >= NOW() - INTERVAL '30 days'
-        AND c.salesperson_id = :salespersonId`,
-        { 
-          replacements: { salespersonId }, 
-          type: sequelize.QueryTypes.SELECT 
-        }
-      );
-
-      const last30DaysPaymentsResult = await sequelize.query(
-        `SELECT COALESCE(SUM(p.amount), 0) as total_payments
-        FROM payments p
-        LEFT JOIN clients c ON p.client_id = c.id
-        WHERE p.created_at >= NOW() - INTERVAL '30 days'
-        AND c.salesperson_id = :salespersonId`,
-        { 
-          replacements: { salespersonId }, 
-          type: sequelize.QueryTypes.SELECT 
-        }
-      );
-
-      const totalSales = parseFloat(totalDebtResult[0]?.total_sales) || 0;
-      const totalPayments = parseFloat(totalDebtResult[0]?.total_payments) || 0;
-      const totalDebt = totalSales - totalPayments;
-      const totalSalesLast30Days = parseFloat(last30DaysSalesResult[0]?.total_sales) || 0;
-      const totalPaymentsLast30Days = parseFloat(last30DaysPaymentsResult[0]?.total_payments) || 0;
-
-      res.json({
-        totalDebt,
-        totalSalesLast30Days,
-        totalPaymentsLast30Days,
-      });
+    // Construir filtros de fecha
+    let dateFilter = '';
+    let dateFilterPayments = '';
+    const replacements = {};
+    
+    if (dateFrom && dateTo) {
+      dateFilter = 'AND s.created_at >= :dateFrom AND s.created_at <= :dateTo';
+      dateFilterPayments = 'AND p.created_at >= :dateFrom AND p.created_at <= :dateTo';
+      replacements.dateFrom = dateFrom;
+      replacements.dateTo = dateTo;
     } else {
-      // Query without filter (TODOS)
-      const totalDebtResult = await sequelize.query(
-        `SELECT 
-          COALESCE(SUM(s.amount), 0) as total_sales,
-          COALESCE(SUM(p.amount), 0) as total_payments
-        FROM clients c
-        LEFT JOIN sales s ON c.id = s.client_id
-        LEFT JOIN payments p ON c.id = p.client_id`,
-        { type: sequelize.QueryTypes.SELECT }
-      );
-
-      const last30DaysSalesResult = await sequelize.query(
-        `SELECT COALESCE(SUM(s.amount), 0) as total_sales
-        FROM sales s
-        WHERE s.created_at >= NOW() - INTERVAL '30 days'`,
-        { type: sequelize.QueryTypes.SELECT }
-      );
-
-      const last30DaysPaymentsResult = await sequelize.query(
-        `SELECT COALESCE(SUM(p.amount), 0) as total_payments
-        FROM payments p
-        WHERE p.created_at >= NOW() - INTERVAL '30 days'`,
-        { type: sequelize.QueryTypes.SELECT }
-      );
-
-      const totalSales = parseFloat(totalDebtResult[0]?.total_sales) || 0;
-      const totalPayments = parseFloat(totalDebtResult[0]?.total_payments) || 0;
-      const totalDebt = totalSales - totalPayments;
-      const totalSalesLast30Days = parseFloat(last30DaysSalesResult[0]?.total_sales) || 0;
-      const totalPaymentsLast30Days = parseFloat(last30DaysPaymentsResult[0]?.total_payments) || 0;
-
-      res.json({
-        totalDebt,
-        totalSalesLast30Days,
-        totalPaymentsLast30Days,
-      });
+      // Por defecto últimos 30 días
+      dateFilter = 'AND s.created_at >= NOW() - INTERVAL \'30 days\'';
+      dateFilterPayments = 'AND p.created_at >= NOW() - INTERVAL \'30 days\'';
     }
+    
+    // Filtro de vendedor
+    let salespersonFilter = '';
+    if (salespersonId && salespersonId !== 'TODOS') {
+      salespersonFilter = 'AND c.salesperson_id = :salespersonId';
+      replacements.salespersonId = salespersonId;
+    }
+
+    // Deuda total (sin filtro de fecha)
+    const totalDebtQuery = `
+      SELECT 
+        COALESCE(SUM(s.amount), 0) as total_sales,
+        COALESCE(SUM(p.amount), 0) as total_payments
+      FROM clients c
+      LEFT JOIN sales s ON c.id = s.client_id
+      LEFT JOIN payments p ON c.id = p.client_id
+      WHERE 1=1 ${salespersonFilter.replace('AND', 'AND')}
+    `;
+
+    // Ventas del período
+    const periodSalesQuery = `
+      SELECT COALESCE(SUM(s.amount), 0) as total_sales
+      FROM sales s
+      LEFT JOIN clients c ON s.client_id = c.id
+      WHERE 1=1 ${dateFilter} ${salespersonFilter}
+    `;
+
+    // Pagos del período
+    const periodPaymentsQuery = `
+      SELECT COALESCE(SUM(p.amount), 0) as total_payments
+      FROM payments p
+      LEFT JOIN clients c ON p.client_id = c.id
+      WHERE 1=1 ${dateFilterPayments} ${salespersonFilter}
+    `;
+
+    const [totalDebtResult, periodSalesResult, periodPaymentsResult] = await Promise.all([
+      sequelize.query(totalDebtQuery, { replacements, type: sequelize.QueryTypes.SELECT }),
+      sequelize.query(periodSalesQuery, { replacements, type: sequelize.QueryTypes.SELECT }),
+      sequelize.query(periodPaymentsQuery, { replacements, type: sequelize.QueryTypes.SELECT })
+    ]);
+
+    const totalSales = parseFloat(totalDebtResult[0]?.total_sales) || 0;
+    const totalPayments = parseFloat(totalDebtResult[0]?.total_payments) || 0;
+    const totalDebt = totalSales - totalPayments;
+    const periodSales = parseFloat(periodSalesResult[0]?.total_sales) || 0;
+    const periodPayments = parseFloat(periodPaymentsResult[0]?.total_payments) || 0;
+
+    res.json({
+      totalDebt,
+      totalSalesLast30Days: periodSales,
+      totalPaymentsLast30Days: periodPayments,
+      periodLabel: dateFrom && dateTo ? `${dateFrom} al ${dateTo}` : 'Últimos 30 días'
+    });
   } catch (error) {
     console.error('Error in getDashboardKPIs:', error);
     res.status(500).json({ error: error.message });
@@ -133,7 +112,21 @@ export const getSalespersonRankings = async (req, res) => {
 // Get delinquent clients (top 10)
 export const getDelinquentClients = async (req, res) => {
   try {
-    const { salespersonId } = req.query;
+    const { salespersonId, dateFrom, dateTo } = req.query;
+    
+    // Construir filtro de período para pagos
+    let paymentDateFilter = '';
+    const replacements = {};
+    
+    if (dateFrom && dateTo) {
+      // Clientes que NO han pagado en el período especificado
+      paymentDateFilter = `AND (MAX(p.created_at) IS NULL OR MAX(p.created_at) < :dateFrom)`;
+      replacements.dateFrom = dateFrom;
+    } else {
+      // Por defecto: sin pagos en los últimos 60 días
+      paymentDateFilter = `AND (MAX(p.created_at) IS NULL OR MAX(p.created_at) < NOW() - INTERVAL '60 days')`;
+    }
+
     let query = `SELECT 
       c.id,
       c.name,
@@ -148,8 +141,7 @@ export const getDelinquentClients = async (req, res) => {
     LEFT JOIN sales s ON c.id = s.client_id
     LEFT JOIN payments p ON c.id = p.client_id`;
 
-    const replacements = {};
-
+    // Filtro de vendedor
     if (salespersonId && salespersonId !== 'TODOS') {
       query += ` WHERE c.salesperson_id = :salespersonId`;
       replacements.salespersonId = salespersonId;
@@ -157,7 +149,7 @@ export const getDelinquentClients = async (req, res) => {
 
     query += ` GROUP BY c.id, c.name, c.phone, c.email, c.salesperson_id, sp.id, sp.name
     HAVING (COALESCE(SUM(s.amount), 0) - COALESCE(SUM(p.amount), 0) > 0)
-      AND (MAX(p.created_at) IS NULL OR MAX(p.created_at) < NOW() - INTERVAL '60 days')
+      ${paymentDateFilter}
     ORDER BY debt DESC
     LIMIT 10`;
 

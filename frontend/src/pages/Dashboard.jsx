@@ -16,6 +16,8 @@ import {
   Alert,
   Chip,
   TextField,
+  Button,
+  Stack,
 } from '@mui/material';
 import { dashboardAPI } from '../api/services';
 import { useSalesperson } from '../context/SalespersonContext';
@@ -47,6 +49,11 @@ const Dashboard = () => {
   const [opportunitiesSearch, setOpportunitiesSearch] = useState('');
   const [minDebt, setMinDebt] = useState('');
   const [maxDebt, setMaxDebt] = useState('');
+  
+  // Date filters
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [periodLabel, setPeriodLabel] = useState('Últimos 30 días');
 
   useEffect(() => {
     if (selectedSalesperson) {
@@ -83,6 +90,12 @@ const Dashboard = () => {
       setLoading(true);
       const params = selectedSalesperson?.id !== 'TODOS' ? { salespersonId: selectedSalesperson.id } : {};
       
+      // Añadir filtros de fecha si están definidos
+      if (dateFrom && dateTo) {
+        params.dateFrom = dateFrom;
+        params.dateTo = dateTo;
+      }
+      
       const [kpisData, rankingsData, delinquentData, opportunitiesData] = await Promise.all([
         dashboardAPI.getKPIs(params),
         dashboardAPI.getSalespersonRankings(params),
@@ -94,11 +107,49 @@ const Dashboard = () => {
       setRankings(rankingsData.data);
       setDelinquent(delinquentData.data);
       setOpportunities(opportunitiesData.data);
+      
+      // Actualizar etiqueta del período
+      if (kpisData.data.periodLabel) {
+        setPeriodLabel(kpisData.data.periodLabel);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Función para establecer período personalizado
+  const handleDateFilter = () => {
+    if (dateFrom && dateTo) {
+      fetchDashboardData();
+    }
+  };
+
+  // Función para "cerrar mes" - establecer desde el día actual del mes anterior hasta hoy
+  const handleCloseMonth = () => {
+    const today = new Date();
+    const dayOfMonth = today.getDate();
+    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, dayOfMonth);
+    
+    const fromDate = lastMonth.toISOString().split('T')[0];
+    const toDate = today.toISOString().split('T')[0];
+    
+    setDateFrom(fromDate);
+    setDateTo(toDate);
+    
+    // Actualizar automáticamente
+    setTimeout(() => {
+      fetchDashboardData();
+    }, 100);
+  };
+
+  // Función para resetear a últimos 30 días
+  const handleResetPeriod = () => {
+    setDateFrom('');
+    setDateTo('');
+    setPeriodLabel('Últimos 30 días');
+    fetchDashboardData();
   };
 
   if (loading) return <CircularProgress />;
@@ -120,16 +171,66 @@ const Dashboard = () => {
         )}
       </Box>
 
+      {/* Controles de Fecha */}
+      <Paper sx={{ p: 3, mb: 4 }}>
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
+          Filtros de Período - {periodLabel}
+        </Typography>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
+          <TextField
+            label="Fecha Desde"
+            type="date"
+            size="small"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            sx={{ minWidth: '150px' }}
+          />
+          <TextField
+            label="Fecha Hasta"
+            type="date"
+            size="small"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            sx={{ minWidth: '150px' }}
+          />
+          <Button 
+            variant="contained" 
+            onClick={handleDateFilter}
+            disabled={!dateFrom || !dateTo}
+            sx={{ minWidth: '120px' }}
+          >
+            Aplicar Filtro
+          </Button>
+          <Button 
+            variant="contained" 
+            color="secondary"
+            onClick={handleCloseMonth}
+            sx={{ minWidth: '120px' }}
+          >
+            Cerrar Mes
+          </Button>
+          <Button 
+            variant="outlined" 
+            onClick={handleResetPeriod}
+            sx={{ minWidth: '120px' }}
+          >
+            Últimos 30 días
+          </Button>
+        </Stack>
+      </Paper>
+
       {/* KPIs */}
       <Grid container spacing={2} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
           <DashboardCard title="Deuda Total" value={kpis?.totalDebt} currency />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <DashboardCard title="Ventas Últimos 30 días" value={kpis?.totalSalesLast30Days} currency />
+          <DashboardCard title={`Ventas ${periodLabel}`} value={kpis?.totalSalesLast30Days} currency />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <DashboardCard title="Pagos Últimos 30 días" value={kpis?.totalPaymentsLast30Days} currency />
+          <DashboardCard title={`Pagos ${periodLabel}`} value={kpis?.totalPaymentsLast30Days} currency />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <DashboardCard title="Neto (Ventas - Pagos)" value={(kpis?.totalSalesLast30Days || 0) - (kpis?.totalPaymentsLast30Days || 0)} currency />

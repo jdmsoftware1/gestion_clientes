@@ -5,7 +5,7 @@ import sequelize from '../config/database.js';
 export const getAllSalespeople = async (req, res) => {
   try {
     const salespeople = await Salesperson.findAll({
-      attributes: ['id', 'name', 'email', 'createdAt', 'updatedAt'],
+      attributes: ['id', 'name', 'email'],
       order: [['name', 'ASC']],
     });
 

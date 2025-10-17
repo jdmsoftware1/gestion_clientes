@@ -7,20 +7,19 @@ export const getAllClients = async (req, res) => {
   try {
     const { salespersonId, search } = req.query;
     
-    let where = salespersonId ? { salespersonId } : {};
+    let where = (salespersonId && salespersonId !== 'TODOS') ? { salespersonId } : {};
     
-    // Add search filter for name, id, or internalCode
+    // Add search filter for name or internalCode
     if (search) {
       where[Op.or] = [
         { name: { [Op.iLike]: `%${search}%` } },
-        { internalCode: { [Op.iLike]: `%${search}%` } },
-        { id: { [Op.iLike]: `%${search}%` } },
+        { internalCode: { [Op.iLike]: `%${search}%` } }
       ];
     }
     
     const clients = await Client.findAll({
       where,
-      attributes: ['id', 'internalCode', 'name', 'phone', 'email', 'address', 'salespersonId', 'createdAt', 'updatedAt'],
+      attributes: ['id', 'internalCode', 'name', 'phone', 'email', 'address', 'salespersonId'],
       order: [['name', 'ASC']],
       raw: true,
     });
@@ -158,8 +157,8 @@ export async function calculateClientDebt(clientId) {
     `
     SELECT COALESCE(SUM(s.amount), 0) - COALESCE(SUM(p.amount), 0) as debt
     FROM clients c
-    LEFT JOIN sales s ON c.id = s."clientId"
-    LEFT JOIN payments p ON c.id = p."clientId"
+    LEFT JOIN sales s ON c.id = s.client_id
+    LEFT JOIN payments p ON c.id = p.client_id
     WHERE c.id = ?
     `,
     { replacements: [clientId], type: sequelize.QueryTypes.SELECT }
@@ -172,9 +171,9 @@ export async function calculateClientDebt(clientId) {
 export async function getLastPaymentMonth(clientId) {
   const result = await sequelize.query(
     `
-    SELECT TO_CHAR(MAX("createdAt"), 'MM/YYYY') as last_month
+    SELECT TO_CHAR(MAX(created_at), 'MM/YYYY') as last_month
     FROM payments
-    WHERE "clientId" = ?
+    WHERE client_id = ?
     `,
     { replacements: [clientId], type: sequelize.QueryTypes.SELECT }
   );
