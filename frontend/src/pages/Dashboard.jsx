@@ -60,9 +60,20 @@ const Dashboard = () => {
   const [minDebt, setMinDebt] = useState('');
   const [maxDebt, setMaxDebt] = useState('');
   
-  // Date filters
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  // Date filters - Inicializar con últimos 30 días reales
+  const getInitialDates = () => {
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today);
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+    return {
+      dateFrom: thirtyDaysAgo.toISOString().split('T')[0],
+      dateTo: today.toISOString().split('T')[0]
+    };
+  };
+  
+  const initialDates = getInitialDates();
+  const [dateFrom, setDateFrom] = useState(initialDates.dateFrom);
+  const [dateTo, setDateTo] = useState(initialDates.dateTo);
   const [periodLabel, setPeriodLabel] = useState('Últimos 30 días');
   
   // Month closure states
@@ -171,11 +182,22 @@ const Dashboard = () => {
 
   // Función para resetear a últimos 30 días
   const handleResetPeriod = () => {
-    setDateFrom('');
-    setDateTo('');
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today);
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+    
+    const dateFromStr = thirtyDaysAgo.toISOString().split('T')[0];
+    const dateToStr = today.toISOString().split('T')[0];
+    
+    setDateFrom(dateFromStr);
+    setDateTo(dateToStr);
     setPeriodLabel('Últimos 30 días');
     setSelectedClosure(null);
-    fetchDashboardData();
+    
+    // Actualizar dashboard con las fechas calculadas
+    setTimeout(() => {
+      fetchDashboardData();
+    }, 100);
   };
 
   // Función para obtener cierres
