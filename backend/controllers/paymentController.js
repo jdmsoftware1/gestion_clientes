@@ -9,7 +9,7 @@ export const getAllPayments = async (req, res) => {
 
     const payments = await Payment.findAll({
       include,
-      order: [['createdAt', 'DESC']],
+      order: [['created_at', 'DESC']],
     });
 
     // Filter by salesperson if specified
@@ -30,7 +30,7 @@ export const getPaymentsByClient = async (req, res) => {
     const payments = await Payment.findAll({
       where: { clientId },
       include: [{ model: Client, as: 'client' }],
-      order: [['createdAt', 'DESC']],
+      order: [['created_at', 'DESC']],
     });
 
     res.json(payments);

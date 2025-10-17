@@ -18,8 +18,17 @@ import {
   TextField,
   Button,
   Stack,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Autocomplete,
 } from '@mui/material';
-import { dashboardAPI } from '../api/services';
+import { dashboardAPI, monthClosuresAPI } from '../api/services';
 import { useSalesperson } from '../context/SalespersonContext';
 
 const DashboardCard = ({ title, value, currency = false }) => (
@@ -54,10 +63,18 @@ const Dashboard = () => {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [periodLabel, setPeriodLabel] = useState('Últimos 30 días');
+  
+  // Month closure states
+  const [openClosureModal, setOpenClosureModal] = useState(false);
+  const [closureName, setClosureName] = useState('');
+  const [closureDescription, setClosureDescription] = useState('');
+  const [closures, setClosures] = useState([]);
+  const [selectedClosure, setSelectedClosure] = useState(null);
 
   useEffect(() => {
     if (selectedSalesperson) {
       fetchDashboardData();
+      fetchClosures();
     }
   }, [selectedSalesperson]);
   
@@ -149,7 +166,67 @@ const Dashboard = () => {
     setDateFrom('');
     setDateTo('');
     setPeriodLabel('Últimos 30 días');
+    setSelectedClosure(null);
     fetchDashboardData();
+  };
+
+  // Función para obtener cierres
+  const fetchClosures = async () => {
+    try {
+      const params = selectedSalesperson?.id !== 'TODOS' ? { salespersonId: selectedSalesperson.id } : {};
+      const response = await monthClosuresAPI.getAll(params);
+      setClosures(response.data);
+    } catch (error) {
+      console.error('Error fetching closures:', error);
+    }
+  };
+
+  // Función para crear un nuevo cierre
+  const handleCreateClosure = async () => {
+    try {
+      if (!closureName.trim()) {
+        alert('Por favor, introduce un nombre para el cierre');
+        return;
+      }
+
+      const closureData = {
+        name: closureName,
+        description: closureDescription,
+        salespersonId: selectedSalesperson?.id !== 'TODOS' ? selectedSalesperson.id : null,
+        closedBy: 'Usuario' // Aquí podrías usar un sistema de autenticación
+      };
+
+      await monthClosuresAPI.create(closureData);
+      
+      // Limpiar formulario y cerrar modal
+      setClosureName('');
+      setClosureDescription('');
+      setOpenClosureModal(false);
+      
+      // Refrescar datos
+      fetchClosures();
+      fetchDashboardData();
+      
+      alert('Cierre creado exitosamente');
+    } catch (error) {
+      console.error('Error creating closure:', error);
+      alert('Error al crear el cierre: ' + error.message);
+    }
+  };
+
+  // Función para aplicar un cierre seleccionado
+  const handleApplyClosure = (closure) => {
+    if (closure) {
+      setDateFrom(closure.dateFrom);
+      setDateTo(closure.dateTo);
+      setSelectedClosure(closure);
+      setPeriodLabel(closure.name);
+      
+      // Actualizar dashboard con las fechas del cierre
+      setTimeout(() => {
+        fetchDashboardData();
+      }, 100);
+    }
   };
 
   if (loading) return <CircularProgress />;
@@ -171,11 +248,34 @@ const Dashboard = () => {
         )}
       </Box>
 
-      {/* Controles de Fecha */}
+      {/* Controles de Fecha y Cierres */}
       <Paper sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
           Filtros de Período - {periodLabel}
         </Typography>
+        
+        {/* Selector de Cierres Guardados */}
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center" sx={{ mb: 2 }}>
+          <Autocomplete
+            options={closures}
+            getOptionLabel={(option) => `${option.name} (${option.dateFrom} - ${option.dateTo})`}
+            value={selectedClosure}
+            onChange={(event, newValue) => handleApplyClosure(newValue)}
+            renderInput={(params) => (
+              <TextField {...params} label="Cierres Guardados" size="small" />
+            )}
+            sx={{ minWidth: '300px' }}
+          />
+          <Button 
+            variant="outlined" 
+            onClick={handleResetPeriod}
+            sx={{ minWidth: '120px' }}
+          >
+            Últimos 30 días
+          </Button>
+        </Stack>
+
+        {/* Controles de Fecha Manual */}
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
           <TextField
             label="Fecha Desde"
@@ -206,17 +306,10 @@ const Dashboard = () => {
           <Button 
             variant="contained" 
             color="secondary"
-            onClick={handleCloseMonth}
+            onClick={() => setOpenClosureModal(true)}
             sx={{ minWidth: '120px' }}
           >
             Cerrar Mes
-          </Button>
-          <Button 
-            variant="outlined" 
-            onClick={handleResetPeriod}
-            sx={{ minWidth: '120px' }}
-          >
-            Últimos 30 días
           </Button>
         </Stack>
       </Paper>
@@ -377,6 +470,55 @@ const Dashboard = () => {
           </Table>
         </TableContainer>
       </Paper>
+
+      {/* Modal para Crear Cierre */}
+      <Dialog open={openClosureModal} onClose={() => setOpenClosureModal(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Crear Nuevo Cierre de Mes</DialogTitle>
+        <DialogContent>
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            <TextField
+              label="Nombre del Cierre"
+              value={closureName}
+              onChange={(e) => setClosureName(e.target.value)}
+              placeholder="Ej: Primer Cierre Octubre, Cierre Navidad..."
+              fullWidth
+              required
+            />
+            <TextField
+              label="Descripción (Opcional)"
+              value={closureDescription}
+              onChange={(e) => setClosureDescription(e.target.value)}
+              placeholder="Descripción adicional del cierre..."
+              multiline
+              rows={3}
+              fullWidth
+            />
+            <Alert severity="info">
+              <Typography variant="body2">
+                <strong>Período del cierre:</strong><br/>
+                Este cierre abarcará desde el último cierre hasta hoy ({new Date().toLocaleDateString()}).
+                {selectedSalesperson?.id !== 'TODOS' && (
+                  <>
+                    <br/><strong>Vendedor:</strong> {selectedSalesperson?.name}
+                  </>
+                )}
+              </Typography>
+            </Alert>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenClosureModal(false)}>
+            Cancelar
+          </Button>
+          <Button 
+            onClick={handleCreateClosure} 
+            variant="contained"
+            disabled={!closureName.trim()}
+          >
+            Crear Cierre
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

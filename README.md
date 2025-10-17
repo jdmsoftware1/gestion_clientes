@@ -1,15 +1,41 @@
-# Gestión de Clientes y Ventas
+# 📊 Sistema de Gestión de Clientes y Ventas
 
-Una aplicación Full-Stack completa para gestionar vendedores, clientes, ventas y pagos con un sistema dinámico de cuenta corriente.
+Una aplicación Full-Stack profesional para gestionar vendedores, clientes, ventas y pagos con un sistema avanzado de cuenta corriente y cierres de mes personalizados.
 
-## 🚀 Características
+## 🚀 Características Principales
 
+### 💼 **Gestión Completa**
 - **CRUD Completo** para Vendedores, Clientes, Ventas y Pagos
 - **Sistema de Cuenta Corriente**: Deuda calculada dinámicamente (Ventas - Pagos)
-- **Dashboard Analítico** con KPIs, rankings y alertas de clientes morosos
-- **Importación CSV** para migración inicial de datos
-- **Interfaz Responsive** con Material-UI
-- **API RESTful** optimizada con Sequelize ORM
+- **Códigos Internos** para clientes migrados del sistema anterior
+- **Filtros avanzados** por vendedor, búsqueda de texto y rangos de deuda
+
+### 📈 **Dashboard Analítico Avanzado**
+- **KPIs en Tiempo Real**: Deuda total, ventas y pagos por período
+- **Rankings de Vendedores** por total vendido
+- **Clientes Morosos** (sin pagos en período específico)
+- **Oportunidades de Venta** (clientes con deuda baja)
+- **Filtros de Fecha Personalizados** con períodos flexibles
+
+### 🗓️ **Sistema de Cierres de Mes**
+- **Cierres Personalizados** con nombres descriptivos
+- **Períodos Inteligentes** que se calculan automáticamente
+- **Búsqueda de Cierres** por nombre y fechas
+- **Métricas Guardadas** de cada cierre (ventas, pagos, deuda, neto)
+- **Historial Completo** de todos los cierres realizados
+
+### 🔄 **Migración de Datos**
+- **Importación desde SQL** del sistema anterior
+- **Scripts de Migración** automatizados
+- **Preservación de Datos** originales con códigos internos
+- **Validación y Limpieza** de datos durante la migración
+
+### 🎨 **Interfaz Moderna**
+- **Material-UI** con diseño responsive
+- **Filtros Dinámicos** en tiempo real
+- **Modales Interactivos** para crear cierres
+- **Autocompletado** para búsqueda de cierres
+- **Indicadores Visuales** de estado y métricas
 
 ## 📋 Requisitos Previos
 
@@ -196,6 +222,21 @@ GET    /api/dashboard/opportunities - Oportunidades de venta (<50€)
 POST   /api/import/clients-from-csv - Importar desde CSV
 ```
 
+### Cierres de Mes
+
+```
+GET    /api/month-closures           - Obtener todos los cierres
+POST   /api/month-closures           - Crear nuevo cierre
+GET    /api/month-closures/:id       - Obtener cierre específico
+PUT    /api/month-closures/:id       - Actualizar cierre
+DELETE /api/month-closures/:id       - Eliminar cierre
+```
+
+**Parámetros de consulta para GET /api/month-closures:**
+- `search`: Buscar por nombre del cierre
+- `salespersonId`: Filtrar por vendedor específico
+- `dateFrom` y `dateTo`: Filtrar por rango de fechas
+
 ## 📝 Formato CSV para Importación
 
 Crea un archivo `clientes.csv` con el siguiente formato:
@@ -215,27 +256,130 @@ Columnas requeridas:
 - **nombre_vendedor**: Nombre del vendedor (requerido, se crea si no existe)
 - **deuda_inicial**: Deuda inicial en €uro (requerido, número decimal)
 
+## 🗓️ Sistema de Cierres de Mes
+
+### Funcionalidad Principal
+
+El sistema de cierres permite crear períodos personalizados con nombres descriptivos para analizar métricas específicas.
+
+### Cómo Funciona
+
+1. **Primer Cierre**: Se calcula desde el primer día del mes actual hasta la fecha de cierre
+2. **Cierres Posteriores**: Se calculan desde el día siguiente del último cierre hasta la nueva fecha
+3. **Métricas Automáticas**: Cada cierre guarda ventas, pagos, deuda total y neto del período
+
+### Crear un Cierre
+
+```javascript
+// Ejemplo de creación de cierre
+POST /api/month-closures
+{
+  "name": "Primer Cierre Octubre",
+  "description": "Cierre inicial del mes de octubre",
+  "salespersonId": "uuid-vendedor" // null para todos los vendedores
+}
+```
+
+### Respuesta del Cierre
+
+```javascript
+{
+  "id": "uuid-cierre",
+  "name": "Primer Cierre Octubre",
+  "dateFrom": "2025-09-30",
+  "dateTo": "2025-10-17",
+  "salespersonId": null,
+  "totalSales": 88416.64,
+  "totalPayments": 0.00,
+  "totalDebt": 88416.64,
+  "netAmount": 88416.64,
+  "description": "Cierre inicial del mes de octubre",
+  "closedBy": "Usuario",
+  "created_at": "2025-10-17T14:54:35.236Z"
+}
+```
+
+### Buscar Cierres
+
+```javascript
+// Buscar por nombre
+GET /api/month-closures?search=octubre
+
+// Filtrar por vendedor
+GET /api/month-closures?salespersonId=uuid-vendedor
+
+// Filtrar por fechas
+GET /api/month-closures?dateFrom=2025-10-01&dateTo=2025-10-31
+```
+
 ## 📱 Funcionalidades del Frontend
 
-### Dashboard
+### Dashboard Avanzado
 
-- KPIs: Deuda total, ventas y pagos últimos 30 días
-- Ranking de vendedores por total vendido
-- Clientes morosos (sin pagos en 60 días)
-- Oportunidades de venta (deuda < 50€, destacadas en verde)
+#### **KPIs Dinámicos**
+- **Deuda Total**: Suma de todas las deudas actuales
+- **Ventas del Período**: Filtradas por fechas seleccionadas
+- **Pagos del Período**: Filtradas por fechas seleccionadas
+- **Neto del Período**: Diferencia entre ventas y pagos
 
-### Gestión de Datos
+#### **Filtros de Período**
+- **Selector de Cierres**: Dropdown con autocompletado de cierres guardados
+- **Fechas Manuales**: Selección libre de fecha desde/hasta
+- **Botón "Cerrar Mes"**: Abre modal para crear nuevo cierre
+- **Botón "Últimos 30 días"**: Resetea a vista por defecto
 
-- **Vendedores**: Crear, editar, eliminar, ver deuda total
-- **Clientes**: CRUD, asignación a vendedor, deuda visual
-- **Ventas**: CRUD, asociación a cliente
-- **Pagos**: CRUD, métodos de pago configurables
+#### **Rankings y Análisis**
+- **Ranking de Vendedores** por total vendido
+- **Clientes Morosos** (sin pagos en período específico)
+- **Oportunidades de Venta** (deuda < 75€, destacadas en verde)
+- **Filtros de Búsqueda** en tiempo real para todas las tablas
 
-### Importación
+### Sistema de Cierres Interactivo
 
-- Interfaz drag-and-drop para CSV
-- Validación de datos
-- Reporte de importación con éxitos y errores
+#### **Modal de Creación**
+- **Nombre Personalizado**: Campo obligatorio para identificar el cierre
+- **Descripción Opcional**: Campo libre para notas adicionales
+- **Información del Período**: Muestra automáticamente las fechas que abarcará
+- **Vendedor Específico**: Si está filtrado, el cierre será solo para ese vendedor
+
+#### **Búsqueda y Selección**
+- **Autocompletado**: Busca cierres por nombre mientras escribes
+- **Formato Descriptivo**: Muestra "Nombre (fecha-desde - fecha-hasta)"
+- **Aplicación Automática**: Al seleccionar un cierre, actualiza el dashboard
+- **Historial Completo**: Acceso a todos los cierres creados
+
+### Gestión de Datos Mejorada
+
+#### **Vendedores**
+- **CRUD Completo**: Crear, editar, eliminar, listar
+- **Filtro de Contexto**: Selección global que afecta todo el sistema
+- **Deuda Total**: Calculada dinámicamente por vendedor
+
+#### **Clientes**
+- **CRUD Avanzado**: Con códigos internos y asignación a vendedor
+- **Búsqueda Inteligente**: Por nombre, código interno o teléfono
+- **Filtros de Deuda**: Rangos mínimo y máximo
+- **Indicadores Visuales**: Colores según estado de deuda
+
+#### **Ventas y Pagos**
+- **CRUD Completo**: Con asociación automática a clientes
+- **Filtros por Vendedor**: Herencia del contexto global
+- **Fechas Flexibles**: Soporte para períodos personalizados
+- **Métodos de Pago**: Configurables (Efectivo, Transferencia, Tarjeta)
+
+### Importación y Migración
+
+#### **Importación CSV**
+- **Interfaz Drag-and-Drop** para archivos CSV
+- **Validación en Tiempo Real** de datos
+- **Reporte Detallado** con éxitos y errores
+- **Creación Automática** de vendedores si no existen
+
+#### **Migración SQL**
+- **Scripts Automatizados** para migrar desde sistema anterior
+- **Preservación de Códigos**: Mantiene referencias del sistema original
+- **Limpieza de Datos**: Validación y corrección automática
+- **Reporte de Migración**: Estadísticas detalladas del proceso
 
 ## 🧮 Lógica de Negocio
 
@@ -294,51 +438,61 @@ Criterios:
 gestion_clientes/
 ├── backend/
 │   ├── config/
-│   │   └── database.js
+│   │   └── database.js                    # Configuración de Sequelize
 │   ├── models/
-│   │   ├── Salesperson.js
-│   │   ├── Client.js
-│   │   ├── Sale.js
-│   │   ├── Payment.js
-│   │   └── index.js
+│   │   ├── Salesperson.js                 # Modelo de vendedores
+│   │   ├── Client.js                      # Modelo de clientes
+│   │   ├── Sale.js                        # Modelo de ventas
+│   │   ├── Payment.js                     # Modelo de pagos
+│   │   ├── MonthClosure.js               # Modelo de cierres de mes
+│   │   └── index.js                       # Asociaciones de modelos
 │   ├── controllers/
-│   │   ├── salespersonController.js
-│   │   ├── clientController.js
-│   │   ├── saleController.js
-│   │   ├── paymentController.js
-│   │   ├── dashboardController.js
-│   │   └── importController.js
+│   │   ├── salespersonController.js       # Lógica de vendedores
+│   │   ├── clientController.js            # Lógica de clientes
+│   │   ├── saleController.js              # Lógica de ventas
+│   │   ├── paymentController.js           # Lógica de pagos
+│   │   ├── dashboardController.js         # Lógica del dashboard
+│   │   ├── monthClosureController.js      # Lógica de cierres
+│   │   └── importController.js            # Lógica de importación
 │   ├── routes/
-│   │   ├── salespeople.js
-│   │   ├── clients.js
-│   │   ├── sales.js
-│   │   ├── payments.js
-│   │   ├── dashboard.js
-│   │   └── import.js
-│   ├── server.js
-│   ├── package.json
-│   └── .env.example
+│   │   ├── salespeople.js                 # Rutas de vendedores
+│   │   ├── clients.js                     # Rutas de clientes
+│   │   ├── sales.js                       # Rutas de ventas
+│   │   ├── payments.js                    # Rutas de pagos
+│   │   ├── dashboard.js                   # Rutas del dashboard
+│   │   ├── monthClosures.js               # Rutas de cierres
+│   │   └── import.js                      # Rutas de importación
+│   ├── scripts/
+│   │   ├── migrateSqlDataFixed.js         # Migración desde SQL
+│   │   ├── createDebtSales.js             # Crear ventas por deuda
+│   │   └── seedTestData.js                # Datos de prueba
+│   ├── server.js                          # Servidor principal
+│   ├── package.json                       # Dependencias backend
+│   └── .env.example                       # Variables de entorno
 ├── frontend/
 │   ├── src/
 │   │   ├── api/
-│   │   │   ├── axiosConfig.js
-│   │   │   └── services.js
+│   │   │   ├── axiosConfig.js             # Configuración de Axios
+│   │   │   └── services.js                # Servicios API (incluye cierres)
 │   │   ├── components/
-│   │   │   └── Layout.jsx
+│   │   │   └── Layout.jsx                 # Layout principal
+│   │   ├── context/
+│   │   │   └── SalespersonContext.jsx     # Context de vendedores
 │   │   ├── pages/
-│   │   │   ├── Dashboard.jsx
-│   │   │   ├── Salespeople.jsx
-│   │   │   ├── Clients.jsx
-│   │   │   ├── Sales.jsx
-│   │   │   ├── Payments.jsx
-│   │   │   └── Import.jsx
-│   │   ├── App.jsx
-│   │   └── main.jsx
-│   ├── index.html
-│   ├── vite.config.js
-│   ├── package.json
-│   └── .gitignore
-└── README.md
+│   │   │   ├── Dashboard.jsx              # Dashboard con cierres
+│   │   │   ├── Salespeople.jsx            # Gestión de vendedores
+│   │   │   ├── Clients.jsx                # Gestión de clientes
+│   │   │   ├── Sales.jsx                  # Gestión de ventas
+│   │   │   ├── Payments.jsx               # Gestión de pagos
+│   │   │   └── Import.jsx                 # Importación de datos
+│   │   ├── App.jsx                        # Componente principal
+│   │   └── main.jsx                       # Punto de entrada
+│   ├── index.html                         # HTML principal
+│   ├── vite.config.js                     # Configuración de Vite
+│   ├── package.json                       # Dependencias frontend
+│   └── .gitignore                         # Archivos ignorados
+├── tiendaNew(2).sql                       # Archivo SQL para migración
+└── README.md                              # Esta documentación
 ```
 
 ## 🐛 Troubleshooting
@@ -386,13 +540,32 @@ MIT
 
 - [ ] Endpoint `/api/chatbot-query` para análisis en lenguaje natural
 - [ ] Autenticación y roles de usuario
-- [ ] Exportación a Excel/PDF
-- [ ] Notificaciones por email
-- [ ] Gráficos avanzados
-- [ ] App móvil
+- [ ] Exportación a Excel/PDF de cierres
+- [ ] Notificaciones por email de cierres vencidos
+- [ ] Gráficos avanzados con Chart.js
+- [ ] Comparativas entre cierres
+- [ ] App móvil con React Native
+- [ ] Backup automático de cierres
+
+## 📊 Métricas del Sistema Actual
+
+### Datos Migrados Exitosamente
+- **567 clientes** con códigos internos preservados
+- **294 ventas** con deudas exactas del sistema anterior
+- **7 vendedores** con sus asignaciones
+- **€88,416.64** en deuda total migrada
+- **1 cierre creado** como ejemplo funcional
+
+### Rendimiento
+- **API REST** optimizada con Sequelize ORM
+- **Consultas dinámicas** para cálculo de deudas
+- **Filtros en tiempo real** sin recargas de página
+- **Búsqueda inteligente** con autocompletado
+- **Responsive design** para móviles y tablets
 
 ---
 
-**Versión**: 1.0.0  
-**Estado**: Producción  
-**Última actualización**: Octubre 2024
+**Versión**: 2.0.0  
+**Estado**: Producción con Sistema de Cierres  
+**Última actualización**: Octubre 2025  
+**Desarrollado por**: Sistema de Gestión Avanzada

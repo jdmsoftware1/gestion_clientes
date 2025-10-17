@@ -11,6 +11,7 @@ import saleRoutes from './routes/sales.js';
 import paymentRoutes from './routes/payments.js';
 import dashboardRoutes from './routes/dashboard.js';
 import importRoutes from './routes/import.js';
+import monthClosureRoutes from './routes/monthClosures.js';
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.use('/api/sales', saleRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/import', importRoutes);
+app.use('/api/month-closures', monthClosureRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

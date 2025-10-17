@@ -77,8 +77,12 @@ export const createClient = async (req, res) => {
   try {
     const { name, phone, email, address, salespersonId, internalCode } = req.body;
 
-    if (!name || !salespersonId) {
-      return res.status(400).json({ error: 'Name and salespersonId are required' });
+    if (!name) {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+
+    if (!salespersonId) {
+      return res.status(400).json({ error: 'Salesperson is required. All clients must have a salesperson assigned.' });
     }
 
     // Verify salesperson exists
@@ -96,7 +100,14 @@ export const createClient = async (req, res) => {
       internalCode,
     });
 
-    res.status(201).json(client);
+    // Devolver el cliente creado con la información del vendedor
+    const createdClient = await Client.findByPk(client.id, {
+      include: [
+        { model: Salesperson, as: 'salesperson', attributes: ['id', 'name', 'email'] }
+      ]
+    });
+
+    res.status(201).json(createdClient);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -113,11 +124,17 @@ export const updateClient = async (req, res) => {
       return res.status(404).json({ error: 'Client not found' });
     }
 
-    if (salespersonId) {
-      const salesperson = await Salesperson.findByPk(salespersonId);
-      if (!salesperson) {
-        return res.status(404).json({ error: 'Salesperson not found' });
-      }
+    // Validar que el cliente siempre tenga un vendedor asignado
+    const finalSalespersonId = salespersonId || client.salespersonId;
+    
+    if (!finalSalespersonId) {
+      return res.status(400).json({ error: 'Client must have a salesperson assigned' });
+    }
+
+    // Verificar que el vendedor existe
+    const salesperson = await Salesperson.findByPk(finalSalespersonId);
+    if (!salesperson) {
+      return res.status(404).json({ error: 'Salesperson not found' });
     }
 
     await client.update({
@@ -125,11 +142,18 @@ export const updateClient = async (req, res) => {
       phone,
       email,
       address,
-      salespersonId,
+      salespersonId: finalSalespersonId,
       internalCode,
     });
 
-    res.json(client);
+    // Devolver el cliente actualizado con la información del vendedor
+    const updatedClient = await Client.findByPk(id, {
+      include: [
+        { model: Salesperson, as: 'salesperson', attributes: ['id', 'name', 'email'] }
+      ]
+    });
+
+    res.json(updatedClient);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

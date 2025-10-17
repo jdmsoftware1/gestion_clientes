@@ -11,7 +11,7 @@ export const getAllSales = async (req, res) => {
     const sales = await Sale.findAll({
       include,
       where,
-      order: [['createdAt', 'DESC']],
+      order: [['created_at', 'DESC']],
     });
 
     // Filter by salesperson if specified
@@ -32,7 +32,7 @@ export const getSalesByClient = async (req, res) => {
     const sales = await Sale.findAll({
       where: { clientId },
       include: [{ model: Client, as: 'client' }],
-      order: [['createdAt', 'DESC']],
+      order: [['created_at', 'DESC']],
     });
 
     res.json(sales);

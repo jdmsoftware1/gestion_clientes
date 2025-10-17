@@ -58,3 +58,12 @@ export const importAPI = {
     });
   },
 };
+
+// Month Closures API
+export const monthClosuresAPI = {
+  getAll: (params) => axiosInstance.get('/month-closures', { params }),
+  getById: (id) => axiosInstance.get(`/month-closures/${id}`),
+  create: (data) => axiosInstance.post('/month-closures', data),
+  update: (id, data) => axiosInstance.put(`/month-closures/${id}`, data),
+  delete: (id) => axiosInstance.delete(`/month-closures/${id}`),
+};
