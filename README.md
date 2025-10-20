@@ -2,6 +2,38 @@
 
 Una aplicación Full-Stack profesional para gestionar vendedores, clientes, ventas y pagos con un sistema avanzado de cuenta corriente y cierres de mes personalizados.
 
+## 🚀 Instalación Automática (Equipo Nuevo)
+
+### ⚡ Para Windows - Instalación y ejecución en 1 solo paso:
+
+```powershell
+# En PowerShell como Administrador
+.\instalar_y_ejecutar.ps1
+```
+
+Este script automáticamente:
+- ✅ Instala Node.js si no está presente
+- ✅ Instala todas las dependencias del backend y frontend
+- ✅ Inicia el backend (`npm start`)
+- ✅ Inicia el frontend (`npm run dev`)
+- ✅ Espera a que ambos servicios estén listos
+
+**¡Listo!** La aplicación estará disponible automáticamente en:
+- 🌐 Frontend: http://localhost:5173
+- 🔧 Backend API: http://localhost:5000
+
+### 📋 Requisitos Mínimos:
+- Windows 10/11
+- Conexión a internet (para instalar Node.js)
+- **Cuenta en Neon** (PostgreSQL en la nube) - https://neon.tech
+
+### 🆘 Solución de Problemas:
+- **Error de permisos:** Ejecuta PowerShell como Administrador
+- **Node.js no instala:** Descárgalo manualmente desde nodejs.org
+- **Neon no conecta:** Configura tu DATABASE_URL en `backend/.env`
+
+---
+
 ## 🚀 Características Principales
 
 ### 💼 **Gestión Completa**
@@ -49,10 +81,10 @@ Una aplicación Full-Stack profesional para gestionar vendedores, clientes, vent
 - **Autocompletado** para búsqueda de cierres
 - **Indicadores Visuales** de estado y métricas
 
-## 📋 Requisitos Previos
-
-- Node.js (v16+)
-- PostgreSQL (v12+) o acceso a Neon
+### 📋 Requisitos Mínimos:
+- Windows 10/11
+- Conexión a internet (para instalar Node.js)
+- **Cuenta en Neon** (PostgreSQL en la nube) - https://neon.tech
 - npm o yarn
 
 ## 🛠️ Instalación y Configuración
@@ -68,27 +100,20 @@ cd gestion_clientes
 
 #### 2.1 Variables de Entorno
 
+Crea una cuenta en [Neon](https://neon.tech) y configura tu base de datos:
+
 ```bash
 cd backend
 cp .env.example .env
 ```
 
-Edita `.env` con tu configuración:
+Edita `.env` con tu configuración de Neon:
 
 ```env
-DATABASE_URL=postgresql://usuario:contraseña@localhost:5432/gestion_clientes
+DATABASE_URL=postgresql://usuario:password@ep-xxxx.neon.tech/gestion_clientes?sslmode=require
 NODE_ENV=development
 PORT=5000
 CORS_ORIGIN=http://localhost:5173
-```
-
-**Para Neon (Recomendado para Producción):**
-
-```env
-DATABASE_URL=postgresql://usuario:contraseña@ep-xxxx.neon.tech/gestion_clientes?sslmode=require
-NODE_ENV=production
-PORT=5000
-CORS_ORIGIN=https://tu-dominio.com
 ```
 
 #### 2.2 Instalar Dependencias
