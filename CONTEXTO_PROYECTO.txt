@@ -1,7 +1,7 @@
 # CONTEXTO COMPLETO DEL PROYECTO - GESTIÓN DE CLIENTES
 # =====================================================================
-# Fecha: 17 de Octubre 2025 - ACTUALIZADO CON ANALYTICS AVANZADOS
-# Sistema: Gestión de Clientes con Dashboard + Analytics Empresariales
+# Fecha: 20 de Octubre 2025 - ACTUALIZADO CON ANALYTICS HISTÓRICOS
+# Sistema: Gestión de Clientes con Dashboard + Analytics Empresariales + Datos Históricos
 # Stack: Node.js + Express + React + PostgreSQL + Sequelize + Chart.js
 
 # =====================================================================
@@ -47,6 +47,16 @@ Necesito que crees un sistema completo de gestión de clientes para una empresa 
 - totalSales, totalPayments, totalDebt, netAmount
 - description, closedBy, created_at, updated_at
 
+### HistoricalSale (Ventas Históricas):
+- id (SERIAL), codCom, codArt, codCli, nombreCli, apellidosCli
+- nombreArt, precio, cantidad, subtotal, total, fechaCom
+- vista, cod_user, period_label (default: 'Anteriores a Octubre 2025')
+
+### HistoricalPayment (Pagos Históricos):
+- id (SERIAL), cod_cliente_p, nombre_c_p, apellidos_c_p
+- fecha_pago, tipo_de_pago, cantidad_pago, cod_pago
+- vista, cod_user, period_label (default: 'Anteriores a Octubre 2025')
+
 ## FUNCIONALIDADES CORE REQUERIDAS:
 
 ### 1. DASHBOARD BÁSICO:
@@ -62,6 +72,7 @@ Necesito que crees un sistema completo de gestión de clientes para una empresa 
 - Importación masiva de datos desde archivos
 - Sistema de cierres mensuales
 - Batería de tests para verificar funcionamiento
+- Analytics históricos con datos anteriores a octubre 2025
 
 ### 3. ANÁLISIS AVANZADOS (SEPARADO DEL DASHBOARD BÁSICO):
 - Gráficos de tendencias temporales (Chart.js)
@@ -105,7 +116,7 @@ Necesito que crees un sistema completo de gestión de clientes para una empresa 
 ### Backend:
 ```
 controllers/
-├── dashboardController.js (KPIs básicos, rankings)
+├── dashboardController.js (KPIs básicos, rankings, analytics históricos)
 ├── analyticsController.js (análisis avanzados - SEPARADO)
 ├── saleController.js (con transformación fechas)
 ├── paymentController.js (con transformación fechas)
@@ -121,7 +132,9 @@ utils/
 
 scripts/
 ├── updateSalesToPastDate.js (mover ventas a 31/12/2024)
-└── createOctoberClosureSimple.js (crear cierres ejemplo)
+├── createOctoberClosureSimple.js (crear cierres ejemplo)
+├── create_historical_tables.sql (crear tablas históricas en Neon)
+└── migrate_historical_data.js (migrar datos históricos automáticamente)
 ```
 
 ### Frontend:
@@ -130,11 +143,13 @@ pages/
 ├── Dashboard.jsx (dashboard básico estable)
 └── Analytics.jsx (análisis avanzados con tabs)
 
-components/charts/
-├── TrendChart.jsx (líneas - Chart.js)
-├── ComparisonChart.jsx (barras - Chart.js)
-├── DebtDistributionChart.jsx (circular - Chart.js)
-└── KPICard.jsx (tarjetas avanzadas)
+components/
+├── charts/
+│   ├── TrendChart.jsx (líneas - Chart.js)
+│   ├── ComparisonChart.jsx (barras - Chart.js)
+│   ├── DebtDistributionChart.jsx (circular - Chart.js)
+│   └── KPICard.jsx (tarjetas avanzadas)
+└── HistoricalAnalytics.jsx (🆕 NUEVO - Analytics históricos)
 
 api/
 ├── services.js (APIs básicas)
@@ -149,6 +164,7 @@ context/
 /api/dashboard/kpis
 /api/dashboard/rankings
 /api/dashboard/collectors
+/api/dashboard/historical (🆕 NUEVO - Analytics históricos)
 /api/analytics/kpis
 /api/analytics/trends
 /api/analytics/comparison
@@ -196,7 +212,7 @@ backend/
 ├── controllers/
 │   ├── saleController.js (✅ Fechas corregidas)
 │   ├── paymentController.js (✅ Fechas corregidas)
-│   ├── dashboardController.js (✅ Filtros corregidos)
+│   ├── dashboardController.js (✅ Filtros corregidos + Analytics históricos)
 │   ├── monthClosureController.js (✅ Cierres globales)
 │   ├── clientController.js
 │   ├── importController.js
@@ -206,21 +222,28 @@ backend/
 │   ├── Payment.js
 │   ├── Client.js
 │   ├── Salesperson.js
-│   └── MonthClosure.js
+│   ├── MonthClosure.js
+│   ├── HistoricalSale.js (🆕 NUEVO - Ventas históricas)
+│   └── HistoricalPayment.js (🆕 NUEVO - Pagos históricos)
 ├── routes/
-│   └── analytics.js (🆕 NUEVO)
+│   ├── analytics.js (🆕 NUEVO)
+│   └── dashboard.js (✅ Actualizado con ruta histórica)
 ├── utils/
 │   └── transformDates.js (🆕 NUEVO - Conversión snake_case → camelCase)
 └── scripts/
     ├── updateSalesToPastDate.js (✅ Ejecutado)
-    └── createOctoberClosureSimple.js (✅ Ejecutado)
+    ├── createOctoberClosureSimple.js (✅ Ejecutado)
+    ├── create_historical_tables.sql (🆕 NUEVO - SQL para Neon)
+    └── migrate_historical_data.js (🆕 NUEVO - Migración automática)
 
 frontend/
 ├── src/
 │   ├── pages/
-│   │   └── Dashboard.jsx (✅ Filtros de fecha corregidos)
+│   │   └── Dashboard.jsx (✅ Filtros de fecha corregidos + Analytics históricos)
+│   ├── components/
+│   │   └── HistoricalAnalytics.jsx (🆕 NUEVO - Componente analytics históricos)
 │   ├── api/
-│   │   ├── services.js
+│   │   ├── services.js (✅ Actualizado con endpoint histórico)
 │   │   └── analyticsAPI.js (🆕 NUEVO)
 │   └── context/
 │       └── SalespersonContext.js
@@ -255,12 +278,22 @@ frontend/
 - Modificado `monthClosureController.js` con `Op.or` para incluir cierres globales
 - Ahora muestra cierres específicos del vendedor + cierres globales
 
+### 5. ✅ IMPLEMENTACIÓN DE ANALYTICS HISTÓRICOS
+**Necesidad**: Visualizar datos de ventas y pagos anteriores a octubre 2025 sin interferir con operaciones actuales
+**Solución**:
+- Creados modelos `HistoricalSale` y `HistoricalPayment` con estructura del archivo `tiendaNew(2).sql`
+- Implementado endpoint `/api/dashboard/historical` con filtros por año/mes
+- Componente `HistoricalAnalytics.jsx` con interfaz completa de filtros y visualización
+- Script de migración automática `migrate_historical_data.js`
+- Datos etiquetados como "Anteriores a Octubre 2025"
+
 ## DATOS ACTUALES
 - **Vendedores**: 6 (Bego, David, Yaiza, BegoJi, fe, Jimenez)
 - **Clientes**: ~300 con deudas iniciales
 - **Ventas simuladas**: 293 ventas en 31/12/2024 (€88,114.49 total)
 - **Cierres de mes**: 2 disponibles ("Octubre" y "Primer Cierre Octubre")
 - **Pagos**: 0 (sistema preparado para registrar pagos reales)
+- **Datos históricos**: 29 ventas históricas + 30 pagos históricos de 2021
 
 ## FUNCIONALIDADES ACTUALES
 ✅ Dashboard con KPIs básicos (Deuda Total, Ventas, Pagos, Neto)
@@ -272,6 +305,7 @@ frontend/
 ✅ Importación de datos
 ✅ Cierres de mes
 ✅ Batería de tests del dashboard
+✅ Analytics históricos con datos anteriores a octubre 2025
 
 ## MEJORAS SOLICITADAS (EN PROGRESO)
 El usuario pidió implementar TODAS las siguientes mejoras de forma ordenada:
@@ -317,6 +351,12 @@ El usuario pidió implementar TODAS las siguientes mejoras de forma ordenada:
 - Estructura modular para análisis avanzados
 - Controller `analyticsController.js` con KPIs avanzados
 - API endpoints para análisis (`/api/analytics/*`)
+- **Analytics históricos completos**:
+  * Modelos `HistoricalSale` y `HistoricalPayment`
+  * Endpoint `/api/dashboard/historical`
+  * Componente `HistoricalAnalytics.jsx` con filtros
+  * Script de migración automática
+  * Datos de 2021 importados (29 ventas + 30 pagos)
 - Métricas implementadas:
   * Tasa de conversión (% clientes que pagan)
   * Tiempo promedio de cobro
@@ -353,6 +393,9 @@ node scripts/createOctoberClosureSimple.js
 
 # Verificar filtros de fecha
 node scripts/testDateFilters.js
+
+# Migrar datos históricos (🆕 NUEVO)
+node scripts/migrate_historical_data.js
 ```
 
 ## ENDPOINTS API DISPONIBLES
@@ -360,6 +403,7 @@ node scripts/testDateFilters.js
 /api/dashboard/kpis
 /api/dashboard/rankings
 /api/dashboard/collectors
+/api/dashboard/historical (🆕 NUEVO - Analytics históricos)
 /api/analytics/kpis (🆕 NUEVO)
 /api/analytics/trends (🆕 NUEVO)
 /api/analytics/comparison (🆕 NUEVO)
@@ -377,9 +421,14 @@ node scripts/testDateFilters.js
 4. Desarrollar análisis predictivo
 5. Crear gestión de objetivos
 6. Implementar reportes ejecutivos
+7. Expandir datos históricos con más años/períodos
+8. Crear importación masiva de datos históricos desde CSV
 
 ## NOTAS IMPORTANTES
 - Las ventas simuladas están en 31/12/2024 para no interferir con análisis actuales
 - Los filtros de fecha funcionan correctamente para períodos sin datos (devuelven arrays vacíos)
 - El sistema está preparado para registrar ventas y pagos reales con fechas correctas
 - Todos los cambios están separados del código estable existente
+- **Analytics históricos**: Datos en tablas separadas (`historical_sales`, `historical_payments`) no interfieren con operaciones actuales
+- **Sistema híbrido**: Permite ver datos actuales y históricos de forma independiente
+- **Migración automática**: Script `migrate_historical_data.js` configura todo automáticamente

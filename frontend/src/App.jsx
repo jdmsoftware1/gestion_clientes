@@ -9,6 +9,7 @@ import Sales from './pages/Sales';
 import Payments from './pages/Payments';
 import Import from './pages/Import';
 import Analytics from './pages/Analytics';
+import HistoricalAnalyticsPage from './pages/HistoricalAnalytics';
 import Alerts from './pages/Alerts';
 import TestAnalytics from './pages/TestAnalytics';
 import TestAlerts from './pages/TestAlerts';
@@ -26,6 +27,7 @@ function App() {
             <Route path="/payments" element={<Payments />} />
             <Route path="/import" element={<Import />} />
             <Route path="/analytics" element={<Analytics />} />
+            <Route path="/historical-analytics" element={<HistoricalAnalyticsPage />} />
             <Route path="/alerts" element={<Alerts />} />
             <Route path="/test-analytics" element={<TestAnalytics />} />
             <Route path="/test-alerts" element={<TestAlerts />} />

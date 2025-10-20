@@ -12,10 +12,10 @@ export const getDashboardKPIs = async (req, res) => {
     const replacements = {};
     
     if (dateFrom && dateTo) {
-      dateFilter = 'AND s.created_at >= :dateFrom AND s.created_at <= :dateTo';
-      dateFilterPayments = 'AND p.created_at >= :dateFrom AND p.created_at <= :dateTo';
+      dateFilter = 'AND s.created_at >= :dateFrom AND s.created_at <= :dateToEnd';
+      dateFilterPayments = 'AND p.created_at >= :dateFrom AND p.created_at <= :dateToEnd';
       replacements.dateFrom = dateFrom;
-      replacements.dateTo = dateTo;
+      replacements.dateToEnd = dateTo + ' 23:59:59';
     } else {
       // Por defecto últimos 30 días
       dateFilter = 'AND s.created_at >= NOW() - INTERVAL \'30 days\'';
@@ -275,36 +275,69 @@ export const getSalesOpportunities = async (req, res) => {
 // Get historical analytics (pre-October 2025)
 export const getHistoricalAnalytics = async (req, res) => {
   try {
-    const { year, month } = req.query;
+    const { year, month, salespersonId } = req.query;
     
     // Construir filtros de fecha para datos históricos
     let dateFilter = '';
+    let dateFilterPayments = '';
+    let salespersonFilter = '';
     const replacements = {};
     
     if (year) {
       if (month) {
-        dateFilter = `AND EXTRACT(YEAR FROM fechaCom) = :year AND EXTRACT(MONTH FROM fechaCom) = :month`;
+        dateFilter = `AND EXTRACT(YEAR FROM fechacom) = :year AND EXTRACT(MONTH FROM fechacom) = :month`;
+        dateFilterPayments = `AND EXTRACT(YEAR FROM fecha_pago) = :year AND EXTRACT(MONTH FROM fecha_pago) = :month`;
         replacements.year = year;
         replacements.month = month;
       } else {
-        dateFilter = `AND EXTRACT(YEAR FROM fechaCom) = :year`;
+        dateFilter = `AND EXTRACT(YEAR FROM fechacom) = :year`;
+        dateFilterPayments = `AND EXTRACT(YEAR FROM fecha_pago) = :year`;
         replacements.year = year;
       }
     }
     
+    if (salespersonId && salespersonId !== 'TODOS') {
+      // Limpiar el salespersonId si tiene caracteres extra
+      let cleanSalespersonId = salespersonId;
+      if (salespersonId.includes(':')) {
+        // Si tiene formato UUID:numero, tomar solo el UUID
+        cleanSalespersonId = salespersonId.split(':')[0];
+      }
+      
+      // Si es un número (código legacy), convertirlo
+      let finalSalespersonId = cleanSalespersonId;
+      if (!isNaN(cleanSalespersonId) && cleanSalespersonId.trim() !== '') {
+        finalSalespersonId = parseInt(cleanSalespersonId);
+      } else {
+        // Validar que sea un UUID válido
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(cleanSalespersonId)) {
+          console.error('Invalid salespersonId format:', salespersonId, '-> cleaned:', cleanSalespersonId);
+          return res.status(400).json({ error: `Invalid salespersonId format: ${salespersonId}` });
+        }
+        finalSalespersonId = cleanSalespersonId;
+      }
+      
+      console.log('Applying salesperson filter:', finalSalespersonId, '(original:', salespersonId, ')');
+      salespersonFilter = 'AND cod_user = :salespersonId';
+      replacements.salespersonId = finalSalespersonId;
+    }
+    
+    console.log('Filters applied:', { dateFilter, dateFilterPayments, salespersonFilter });
+    
     // Obtener ventas históricas
     const historicalSalesQuery = `
       SELECT 
-        EXTRACT(YEAR FROM fechaCom) as year,
-        EXTRACT(MONTH FROM fechaCom) as month,
+        EXTRACT(YEAR FROM fechacom) as year,
+        EXTRACT(MONTH FROM fechacom) as month,
         COUNT(*) as total_transactions,
         SUM(total) as total_sales,
         AVG(total) as avg_sale,
-        MIN(fechaCom) as first_sale,
-        MAX(fechaCom) as last_sale
+        MIN(fechacom) as first_sale,
+        MAX(fechacom) as last_sale
       FROM historical_sales
-      WHERE 1=1 ${dateFilter}
-      GROUP BY EXTRACT(YEAR FROM fechaCom), EXTRACT(MONTH FROM fechaCom)
+      WHERE 1=1 ${dateFilter} ${salespersonFilter}
+      GROUP BY EXTRACT(YEAR FROM fechacom), EXTRACT(MONTH FROM fechacom)
       ORDER BY year DESC, month DESC
     `;
     
@@ -319,24 +352,89 @@ export const getHistoricalAnalytics = async (req, res) => {
         MIN(fecha_pago) as first_payment,
         MAX(fecha_pago) as last_payment
       FROM historical_payments
-      WHERE fecha_pago IS NOT NULL ${dateFilter.replace('fechaCom', 'fecha_pago')}
+        WHERE fecha_pago IS NOT NULL ${dateFilterPayments} ${salespersonFilter}
       GROUP BY EXTRACT(YEAR FROM fecha_pago), EXTRACT(MONTH FROM fecha_pago)
       ORDER BY year DESC, month DESC
+    `;
+    
+    // Ranking de vendedores por ventas históricas
+    const historicalSalespersonRankingsQuery = `
+      SELECT 
+        cod_user as salesperson_id,
+        COUNT(*) as total_sales,
+        SUM(total) as total_sold,
+        AVG(total) as avg_sale,
+        MIN(fechacom) as first_sale,
+        MAX(fechacom) as last_sale
+      FROM historical_sales
+      WHERE 1=1 ${dateFilter} ${salespersonId && salespersonId !== 'TODOS' ? 'AND cod_user = :salespersonId' : ''}
+      GROUP BY cod_user
+      ORDER BY total_sold DESC
+    `;
+    
+    // Ranking de cobradores por pagos históricos
+    const historicalCollectorsRankingsQuery = `
+      SELECT 
+        cod_user as salesperson_id,
+        COUNT(*) as total_payments,
+        SUM(cantidad_pago) as total_collected,
+        AVG(cantidad_pago) as avg_payment,
+        MIN(fecha_pago) as first_payment,
+        MAX(fecha_pago) as last_payment
+      FROM historical_payments
+      WHERE fecha_pago IS NOT NULL ${dateFilterPayments} ${salespersonId && salespersonId !== 'TODOS' ? 'AND cod_user = :salespersonId' : ''}
+      GROUP BY cod_user
+      ORDER BY total_collected DESC
+    `;
+    
+    // Clientes morosos históricos
+    const historicalDelinquentQuery = `
+      SELECT 
+        h.cod_cliente_p as client_id,
+        h.nombre_c_p as name,
+        h.apellidos_c_p as lastname,
+        COUNT(*) as payment_count,
+        SUM(h.cantidad_pago) as total_paid,
+        MAX(h.fecha_pago) as last_payment,
+        AVG(h.cantidad_pago) as avg_payment
+      FROM historical_payments h
+      WHERE fecha_pago IS NOT NULL ${dateFilterPayments} ${salespersonFilter}
+      GROUP BY h.cod_cliente_p, h.nombre_c_p, h.apellidos_c_p
+      HAVING MAX(h.fecha_pago) < CURRENT_DATE - INTERVAL '60 days'
+      ORDER BY total_paid DESC
+      LIMIT 10
+    `;
+    
+    // Oportunidades históricas (clientes con poco gasto histórico)
+    const historicalOpportunitiesQuery = `
+      SELECT 
+        s.nombrecli as name,
+        s.apellidoscli as lastname,
+        COUNT(*) as purchase_count,
+        SUM(s.total) as total_spent,
+        AVG(s.total) as avg_purchase,
+        MAX(s.fechacom) as last_purchase
+      FROM historical_sales s
+      WHERE 1=1 ${dateFilter} ${salespersonFilter}
+      GROUP BY s.nombrecli, s.apellidoscli
+      HAVING SUM(s.total) < 50
+      ORDER BY total_spent ASC
+      LIMIT 10
     `;
     
     // Top clientes históricos por ventas
     const topCustomersQuery = `
       SELECT 
-        nombreCli as customer_name,
-        apellidosCli as customer_lastname,
+        nombrecli as customer_name,
+        apellidoscli as customer_lastname,
         COUNT(*) as total_purchases,
         SUM(total) as total_spent,
         AVG(total) as avg_purchase,
-        MIN(fechaCom) as first_purchase,
-        MAX(fechaCom) as last_purchase
+        MIN(fechacom) as first_purchase,
+        MAX(fechacom) as last_purchase
       FROM historical_sales
-      WHERE 1=1 ${dateFilter}
-      GROUP BY nombreCli, apellidosCli
+      WHERE 1=1 ${dateFilter} ${salespersonFilter}
+      GROUP BY nombrecli, apellidoscli
       ORDER BY total_spent DESC
       LIMIT 10
     `;
@@ -344,21 +442,25 @@ export const getHistoricalAnalytics = async (req, res) => {
     // Productos más vendidos
     const topProductsQuery = `
       SELECT 
-        nombreArt as product_name,
+        nombreart as product_name,
         COUNT(*) as times_sold,
         SUM(cantidad) as total_quantity,
         SUM(total) as total_revenue,
         AVG(precio) as avg_price
       FROM historical_sales
-      WHERE 1=1 ${dateFilter}
-      GROUP BY nombreArt
+      WHERE 1=1 ${dateFilter} ${salespersonFilter}
+      GROUP BY nombreart
       ORDER BY total_revenue DESC
       LIMIT 10
     `;
     
-    const [salesData, paymentsData, topCustomers, topProducts] = await Promise.all([
+    const [salesData, paymentsData, salespersonRankings, collectorsRankings, delinquentData, opportunitiesData, topCustomers, topProducts] = await Promise.all([
       sequelize.query(historicalSalesQuery, { replacements, type: sequelize.QueryTypes.SELECT }),
       sequelize.query(historicalPaymentsQuery, { replacements, type: sequelize.QueryTypes.SELECT }),
+      sequelize.query(historicalSalespersonRankingsQuery, { replacements, type: sequelize.QueryTypes.SELECT }),
+      sequelize.query(historicalCollectorsRankingsQuery, { replacements, type: sequelize.QueryTypes.SELECT }),
+      sequelize.query(historicalDelinquentQuery, { replacements, type: sequelize.QueryTypes.SELECT }),
+      sequelize.query(historicalOpportunitiesQuery, { replacements, type: sequelize.QueryTypes.SELECT }),
       sequelize.query(topCustomersQuery, { replacements, type: sequelize.QueryTypes.SELECT }),
       sequelize.query(topProductsQuery, { replacements, type: sequelize.QueryTypes.SELECT })
     ]);
@@ -368,12 +470,20 @@ export const getHistoricalAnalytics = async (req, res) => {
     const totalPayments = paymentsData.reduce((sum, item) => sum + parseFloat(item.total_collected || 0), 0);
     
     res.json({
+      // KPIs principales
+      totalHistoricalSales: totalSales,
+      totalHistoricalPayments: totalPayments,
+      netHistoricalAmount: totalSales - totalPayments,
+      
+      // Resumen
       summary: {
         totalSales,
         totalPayments,
         netBalance: totalSales - totalPayments,
         periodLabel: year && month ? `${month}/${year}` : year ? `Año ${year}` : 'Datos Históricos Completos'
       },
+      
+      // Datos por período
       salesByPeriod: salesData.map(item => ({
         ...item,
         total_sales: parseFloat(item.total_sales || 0),
@@ -384,6 +494,33 @@ export const getHistoricalAnalytics = async (req, res) => {
         total_collected: parseFloat(item.total_collected || 0),
         avg_payment: parseFloat(item.avg_payment || 0)
       })),
+      
+      // Rankings de vendedores/cobradores
+      salespersonRankings: salespersonRankings.map(item => ({
+        ...item,
+        total_sold: parseFloat(item.total_sold || 0),
+        avg_sale: parseFloat(item.avg_sale || 0)
+      })),
+      collectorsRankings: collectorsRankings.map(item => ({
+        ...item,
+        total_collected: parseFloat(item.total_collected || 0),
+        avg_payment: parseFloat(item.avg_payment || 0)
+      })),
+      
+      // Clientes morosos y oportunidades
+      delinquentClients: delinquentData.map(item => ({
+        ...item,
+        total_paid: parseFloat(item.total_paid || 0),
+        avg_payment: parseFloat(item.avg_payment || 0),
+        last_payment: item.last_payment
+      })),
+      salesOpportunities: opportunitiesData.map(item => ({
+        ...item,
+        total_spent: parseFloat(item.total_spent || 0),
+        avg_purchase: parseFloat(item.avg_purchase || 0)
+      })),
+      
+      // Top clientes y productos
       topCustomers: topCustomers.map(item => ({
         ...item,
         total_spent: parseFloat(item.total_spent || 0),

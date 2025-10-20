@@ -34,6 +34,23 @@ Este test verifica:
 - Ventas (crear, obtener, actualizar, eliminar)
 - Pagos (crear, obtener, actualizar, eliminar)
 - Dashboard (KPIs, oportunidades, clientes morosos)
+- **Analytics Históricos** (datos históricos, filtros, rankings)
+
+### Test específico de analytics históricos
+
+```bash
+node test/historical-analytics.test.js
+```
+
+Este test verifica específicamente:
+- ✓ GET /dashboard/historical - Analytics generales (557 ventas + 9,039 pagos)
+- ✓ GET /dashboard/historical?year=2021 - Filtro por año
+- ✓ GET /dashboard/historical?year=2021&month=1 - Filtro por año y mes
+- ✓ Estructura completa de respuesta (summary, períodos, rankings)
+- ✓ Top 10 clientes históricos
+- ✓ Top 10 productos históricos
+- ✓ Ventas por período histórico
+- ✓ Pagos por período histórico
 
 ## Problemas comunes
 
@@ -89,6 +106,48 @@ Si los tests tardan más de 15 segundos, el servidor podría estar lento. Aument
   "totalSales": 0,
   "averageDebt": 0,
   "clientCount": 0
+}
+```
+
+### Analytics Históricos
+```json
+{
+  "totalHistoricalSales": 557,
+  "totalHistoricalPayments": 9039,
+  "netHistoricalAmount": -8482,
+  "summary": {
+    "totalSales": 557,
+    "totalPayments": 9039,
+    "netAmount": -8482
+  },
+  "salesByPeriod": [
+    {
+      "period": "2021",
+      "totalSales": 557,
+      "transactionCount": 557
+    }
+  ],
+  "paymentsByPeriod": [
+    {
+      "period": "2021",
+      "totalPayments": 9039,
+      "transactionCount": 9039
+    }
+  ],
+  "topClients": [
+    {
+      "name": "Cliente Histórico",
+      "totalSpent": 1000.50,
+      "purchaseCount": 25
+    }
+  ],
+  "topProducts": [
+    {
+      "name": "Producto Histórico",
+      "totalRevenue": 5000.00,
+      "salesCount": 100
+    }
+  ]
 }
 ```
 

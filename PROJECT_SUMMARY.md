@@ -18,21 +18,33 @@ gestion_clientes/
 │   │   ├── Client.js                # Modelo de Cliente
 │   │   ├── Sale.js                  # Modelo de Venta
 │   │   ├── Payment.js               # Modelo de Pago
+│   │   ├── MonthClosure.js          # Modelo de Cierres de Mes 
+│   │   ├── HistoricalSale.js        # Modelo de Ventas Históricas 
+│   │   ├── HistoricalPayment.js     # Modelo de Pagos Históricos 
 │   │   └── index.js                 # Asociaciones
 │   ├── controllers/
 │   │   ├── salespersonController.js # Lógica vendedores
 │   │   ├── clientController.js      # Lógica clientes + cálculo deuda
 │   │   ├── saleController.js        # Lógica ventas
 │   │   ├── paymentController.js     # Lógica pagos
-│   │   ├── dashboardController.js   # Analíticas
+│   │   ├── dashboardController.js   # Analíticas + Históricas 
+│   │   ├── monthClosureController.js # Lógica cierres de mes 
 │   │   └── importController.js      # Importación CSV
 │   ├── routes/
 │   │   ├── salespeople.js           # Rutas vendedores
 │   │   ├── clients.js               # Rutas clientes
 │   │   ├── sales.js                 # Rutas ventas
 │   │   ├── payments.js              # Rutas pagos
-│   │   ├── dashboard.js             # Rutas dashboard
+│   │   ├── dashboard.js             # Rutas dashboard + históricas 
+│   │   ├── monthClosures.js         # Rutas cierres de mes 
 │   │   └── import.js                # Rutas importación
+│   ├── scripts/
+│   │   ├── migrateSqlDataFixed.js   # Migración desde SQL
+│   │   ├── createDebtSales.js       # Crear ventas por deuda
+│   │   ├── seedTestData.js          # Datos de prueba
+│   │   ├── create_historical_tables_complete.sql # Crear tablas históricas 
+│   │   ├── extract_all_historical_data.py # Extraer datos históricos 
+│   │   └── historical_data_complete.sql # Datos históricos (557 ventas + 9,039 pagos) 
 │   ├── uploads/                     # Carpeta para archivos CSV
 │   ├── server.js                    # Servidor principal
 │   ├── package.json                 # Dependencias backend
@@ -137,6 +149,24 @@ total_vendedor = SUM(deuda_cliente) para todos sus clientes
   - Clientes con deuda < 50€
   - Resaltado visual en verde
 
+### ✅ Sistema de Cierres de Mes ✨
+
+- [x] **Cierres Personalizados**: Nombres descriptivos y fechas flexibles
+- [x] **Cálculo Automático**: Períodos inteligentes basados en cierres anteriores
+- [x] **Métricas Guardadas**: Ventas, pagos, deuda y neto por cierre
+- [x] **Historial Completo**: Búsqueda por nombre, fechas y vendedor
+- [x] **Filtros Avanzados**: Dashboard con selector de cierres
+
+### ✅ Analytics Históricos ✨
+
+- [x] **Sistema Híbrido**: Datos actuales + históricos separados
+- [x] **9,039 Pagos Históricos**: De 2021-2025 importados automáticamente
+- [x] **557 Ventas Históricas**: De 2021 migradas del sistema anterior
+- [x] **Vista Dedicada**: Página separada en sidebar izquierdo
+- [x] **Filtros por Año/Mes**: Análisis granular de períodos históricos
+- [x] **Top Rankings**: Clientes y productos más importantes históricamente
+- [x] **Migración Automática**: Scripts completos de un solo comando
+
 ### ✅ Funcionalidad de Migración (CSV)
 
 - [x] Interfaz de upload en Frontend
@@ -178,6 +208,13 @@ GET    /api/dashboard/kpis       ✅
 GET    /api/dashboard/rankings   ✅
 GET    /api/dashboard/delinquent ✅
 GET    /api/dashboard/opportunities ✅
+GET    /api/dashboard/historical ✅ (opcional: year, month)
+
+GET    /api/month-closures       ✅
+POST   /api/month-closures       ✅
+GET    /api/month-closures/:id   ✅
+PUT    /api/month-closures/:id   ✅
+DELETE /api/month-closures/:id   ✅
 
 POST   /api/import/clients-from-csv ✅
 ```
@@ -296,6 +333,36 @@ Ver `DEPLOYMENT.md` para:
    - paymentMethod (STRING)
    - clientId (FK)
    - createdAt, updatedAt
+
+5. **month_closures** ✨
+   - id (UUID)
+   - name (STRING)
+   - description (TEXT, optional)
+   - dateFrom (DATE)
+   - dateTo (DATE)
+   - totalSales (DECIMAL)
+   - totalPayments (DECIMAL)
+   - totalDebt (DECIMAL)
+   - netAmount (DECIMAL)
+   - salespersonId (FK, optional)
+   - closedBy (STRING)
+   - timestamps
+
+6. **historical_sales** ✨
+   - id (UUID)
+   - codcom, codart, codcli, nombrecli, apellidoscli, nombreart
+   - precio, cantidad, subtotal, total
+   - fechacom (DATE)
+   - vista, cod_user
+   - timestamps
+
+7. **historical_payments** ✨
+   - id (UUID)
+   - cod_cliente_p, nombre_c_p, apellidos_c_p
+   - fecha_pago (DATE)
+   - tipo_de_pago, cantidad_pago
+   - cod_pago, vista, cod_user
+   - timestamps
 
 ### Asociaciones
 

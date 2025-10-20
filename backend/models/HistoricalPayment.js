@@ -28,7 +28,7 @@ const HistoricalPayment = sequelize.define('HistoricalPayment', {
     allowNull: true,
   },
   cantidad_pago: {
-    type: DataTypes.DECIMAL(6, 2),
+    type: DataTypes.NUMERIC(10, 2),
     allowNull: true,
   },
   cod_pago: {

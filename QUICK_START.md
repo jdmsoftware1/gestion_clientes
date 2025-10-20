@@ -67,6 +67,7 @@ Abre en navegador: **http://localhost:5173**
 4. **Crear Pago**: Menú > Pagos > "Nuevo Pago" (reduce la deuda)
 5. **Ver Dashboard**: Inicio > verás deuda total y analíticas
 6. **Importar CSV**: Usa el archivo `sample-data.csv` en raíz
+7. **Ver Analytics Históricos**: Menú lateral > "📊 Analytics Históricos" (557 ventas + 9,039 pagos históricos)
 
 ---
 
@@ -119,7 +120,8 @@ PORT=5001 npm run dev
 
 | Ruta | Descripción |
 |------|-------------|
-| `/` | Dashboard con analíticas |
+| `/` | Dashboard con analíticas actuales |
+| `/historical-analytics` | Analytics históricos (557 ventas + 9,039 pagos) |
 | `/salespeople` | Gestión de vendedores |
 | `/clients` | Gestión de clientes |
 | `/sales` | Gestión de ventas |
@@ -141,6 +143,28 @@ npm run dev        # Desarrollo
 npm run build      # Compilar para producción
 npm run preview    # Ver build localmente
 ```
+
+---
+
+## 🚀 Analytics Históricos
+
+La aplicación incluye un sistema completo de analytics históricos con **557 ventas y 9,039 pagos históricos** importados automáticamente.
+
+### Cómo acceder:
+
+1. **Menú Lateral**: Click en "📊 Analytics Históricos"
+2. **Filtros**: Selecciona año (2020-2025), mes y vendedor
+3. **Métricas**: KPIs, rankings, clientes morosos, oportunidades
+4. **Sistema Híbrido**: Datos históricos separados de operaciones actuales
+
+### Características:
+
+- ✅ **Sistema Híbrido**: Datos actuales + históricos separados
+- ✅ **9,039 Pagos Históricos**: Cobros de 2021-2025
+- ✅ **557 Ventas Históricas**: Transacciones de 2021
+- ✅ **Filtros Avanzados**: Por año, mes y vendedor
+- ✅ **Rankings Completos**: Top vendedores, cobradores, clientes
+- ✅ **Análisis de Períodos**: Comparativas mensuales/anuales
 
 ---
 

@@ -16,6 +16,7 @@ Una aplicación Full-Stack profesional para gestionar vendedores, clientes, vent
 - **Clientes Morosos** (sin pagos en período específico)
 - **Oportunidades de Venta** (clientes con deuda baja)
 - **Filtros de Fecha Personalizados** con períodos flexibles
+- **Bug Fix**: Filtros de fecha incluyen todo el día (23:59:59)
 
 ### 🗓️ **Sistema de Cierres de Mes**
 - **Cierres Personalizados** con nombres descriptivos
@@ -24,11 +25,22 @@ Una aplicación Full-Stack profesional para gestionar vendedores, clientes, vent
 - **Métricas Guardadas** de cada cierre (ventas, pagos, deuda, neto)
 - **Historial Completo** de todos los cierres realizados
 
+### 📊 **Analytics Históricos**
+- **Sistema Híbrido**: Datos actuales + históricos separados
+- **9,039 Pagos Históricos** de 2021-2025 importados
+- **557 Ventas Históricas** de 2021 migradas automáticamente
+- **Filtros por Año/Mes**: Análisis granular de períodos pasados
+- **Top Clientes/Productos**: Insights históricos de rendimiento
+- **Vista Separada**: No interfiere con operaciones actuales
+- **Migración Automática**: Scripts completos para importar datos
+
 ### 🔄 **Migración de Datos**
 - **Importación desde SQL** del sistema anterior
 - **Scripts de Migración** automatizados
 - **Preservación de Datos** originales con códigos internos
 - **Validación y Limpieza** de datos durante la migración
+- **Datos Históricos Completos**: 557 ventas + 9,039 pagos históricos
+- **Scripts Automatizados**: Migración completa con un solo comando
 
 ### 🎨 **Interfaz Moderna**
 - **Material-UI** con diseño responsive
@@ -111,11 +123,23 @@ node scripts/migrateSqlDataFixed.js
 node scripts/seedTestData.js
 ```
 
+**Migración completa de datos históricos:**
+
+```bash
+# Crear tablas históricas
+node scripts/create_historical_tables_complete.sql
+
+# Migrar TODOS los datos históricos (557 ventas + 9,039 pagos)
+python scripts/extract_all_historical_data.py
+node scripts/historical_data_complete.sql
+```
+
 **Notas importantes:**
 - El script de migración SQL procesará automáticamente clientes, vendedores, ventas y pagos
 - Los clientes mantendrán su `internalCode` original para referencia
 - Las fechas se preservan del archivo original
 - Se crean vendedores automáticamente si no existen
+- Los datos históricos incluyen registros de 2021-2025 filtrados
 
 ### 3. Configurar Frontend
 
@@ -214,6 +238,7 @@ GET    /api/dashboard/kpis       - KPIs generales
 GET    /api/dashboard/rankings   - Ranking de vendedores
 GET    /api/dashboard/delinquent - Clientes morosos (Top 10)
 GET    /api/dashboard/opportunities - Oportunidades de venta (<50€)
+GET    /api/dashboard/historical - Analytics históricos (opcional: year, month)
 ```
 
 ### Importación
@@ -367,6 +392,25 @@ GET /api/month-closures?dateFrom=2025-10-01&dateTo=2025-10-31
 - **Fechas Flexibles**: Soporte para períodos personalizados
 - **Métodos de Pago**: Configurables (Efectivo, Transferencia, Tarjeta)
 
+### Analytics Históricos
+
+#### **Vista Dedicada**
+- **Acceso desde Sidebar**: Opción "Analytics Históricos" en menú lateral
+- **Sistema Híbrido**: Datos históricos separados de operaciones actuales
+- **Filtros Avanzados**: Por año (2020-2025) y mes específico
+
+#### **Datos Históricos Completos**
+- **557 Ventas Históricas**: Desde enero 2021 hasta diciembre 2021
+- **9,039 Pagos Históricos**: Cobros registrados desde 2021 hasta 2025
+- **Top 10 Clientes**: Ranking de clientes con mayor gasto histórico
+- **Top 10 Productos**: Productos más vendidos históricamente
+
+#### **Métricas Históricas**
+- **Resumen General**: Total ventas, pagos y balance neto
+- **Ventas por Período**: Análisis mensual/anual de transacciones
+- **Pagos por Período**: Tendencias de cobros históricos
+- **Comparativas**: Insights para análisis de tendencias
+
 ### Importación y Migración
 
 #### **Importación CSV**
@@ -445,6 +489,8 @@ gestion_clientes/
 │   │   ├── Sale.js                        # Modelo de ventas
 │   │   ├── Payment.js                     # Modelo de pagos
 │   │   ├── MonthClosure.js               # Modelo de cierres de mes
+│   │   ├── HistoricalSale.js             # Modelo de ventas históricas ✨
+│   │   ├── HistoricalPayment.js          # Modelo de pagos históricos ✨
 │   │   └── index.js                       # Asociaciones de modelos
 │   ├── controllers/
 │   │   ├── salespersonController.js       # Lógica de vendedores
@@ -465,7 +511,10 @@ gestion_clientes/
 │   ├── scripts/
 │   │   ├── migrateSqlDataFixed.js         # Migración desde SQL
 │   │   ├── createDebtSales.js             # Crear ventas por deuda
-│   │   └── seedTestData.js                # Datos de prueba
+│   │   ├── seedTestData.js                # Datos de prueba
+│   │   ├── create_historical_tables.sql   # Crear tablas históricas ✨
+│   │   ├── extract_all_historical_data.py # Extraer datos históricos ✨
+│   │   └── historical_data_complete.sql   # Datos históricos completos ✨
 │   ├── server.js                          # Servidor principal
 │   ├── package.json                       # Dependencias backend
 │   └── .env.example                       # Variables de entorno
@@ -484,7 +533,8 @@ gestion_clientes/
 │   │   │   ├── Clients.jsx                # Gestión de clientes
 │   │   │   ├── Sales.jsx                  # Gestión de ventas
 │   │   │   ├── Payments.jsx               # Gestión de pagos
-│   │   │   └── Import.jsx                 # Importación de datos
+│   │   │   ├── Import.jsx                 # Importación de datos
+│   │   │   └── HistoricalAnalytics.jsx    # Analytics históricos ✨
 │   │   ├── App.jsx                        # Componente principal
 │   │   └── main.jsx                       # Punto de entrada
 │   ├── index.html                         # HTML principal
@@ -556,6 +606,12 @@ MIT
 - **€88,416.64** en deuda total migrada
 - **1 cierre creado** como ejemplo funcional
 
+### Datos Históricos Completos
+- **557 ventas históricas** de 2021 importadas
+- **9,039 pagos históricos** de 2021-2025 importados
+- **Sistema híbrido** operativo (actual + histórico)
+- **Analytics históricos** completamente funcionales
+
 ### Rendimiento
 - **API REST** optimizada con Sequelize ORM
 - **Consultas dinámicas** para cálculo de deudas
@@ -565,7 +621,7 @@ MIT
 
 ---
 
-**Versión**: 2.0.0  
-**Estado**: Producción con Sistema de Cierres  
+**Versión**: 2.1.0  
+**Estado**: Producción con Analytics Históricos  
 **Última actualización**: Octubre 2025  
 **Desarrollado por**: Sistema de Gestión Avanzada

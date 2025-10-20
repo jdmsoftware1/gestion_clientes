@@ -7,27 +7,27 @@ const HistoricalSale = sequelize.define('HistoricalSale', {
     primaryKey: true,
     autoIncrement: true,
   },
-  codCom: {
+  codcom: {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-  codArt: {
+  codart: {
     type: DataTypes.INTEGER,
     allowNull: true,
   },
-  codCli: {
+  codcli: {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-  nombreCli: {
+  nombrecli: {
     type: DataTypes.STRING(30),
     allowNull: false,
   },
-  apellidosCli: {
+  apellidoscli: {
     type: DataTypes.STRING(30),
     allowNull: false,
   },
-  nombreArt: {
+  nombreart: {
     type: DataTypes.STRING(50),
     allowNull: false,
   },
@@ -47,7 +47,7 @@ const HistoricalSale = sequelize.define('HistoricalSale', {
     type: DataTypes.DOUBLE,
     allowNull: false,
   },
-  fechaCom: {
+  fechacom: {
     type: DataTypes.DATEONLY,
     allowNull: false,
   },

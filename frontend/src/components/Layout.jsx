@@ -23,6 +23,7 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import PaymentIcon from '@mui/icons-material/Payment';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import HistoryIcon from '@mui/icons-material/History';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -59,6 +60,7 @@ const Layout = ({ children }) => {
     { label: 'Pagos', icon: <PaymentIcon />, path: '/payments' },
     { label: 'Importar CSV', icon: <UploadFileIcon />, path: '/import' },
     { label: 'Análisis Avanzados', icon: <AssessmentIcon />, path: '/analytics' },
+    { label: 'Analytics Históricos', icon: <HistoryIcon />, path: '/historical-analytics' },
     { label: 'Alertas', icon: <NotificationsIcon />, path: '/alerts' },
     { label: '🧪 Test Analytics', icon: <BugReportIcon />, path: '/test-analytics' },
     { label: '🧪 Test Alertas', icon: <BugReportIcon />, path: '/test-alerts' },
