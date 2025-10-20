@@ -1,12 +1,25 @@
 # 📊 Resumen del Proyecto - Gestión de Clientes y Ventas
 
-## ✅ Proyecto Completado
+## ✅ Proyecto Completado - Instalación 100% Automática
 
-Se ha generado una **aplicación Full-Stack completa** lista para producción que cumple todos los requisitos especificados.
+Se ha generado una **aplicación Full-Stack completa** con **instalación automática** lista para cualquier equipo Windows.
+
+### 🚀 Instalación Automática
+```powershell
+# Solo ejecutar este comando:
+.\instalar_y_ejecutar.ps1
+```
+
+**Características de la instalación automática:**
+- ✅ **Instala Node.js** si no existe
+- ✅ **Instala dependencias** automáticamente
+- ✅ **Inicia backend y frontend** automáticamente
+- ✅ **Auto-actualiza** cuando hay nuevas versiones
+- ✅ **Funciona en cualquier equipo** Windows
 
 ---
 
-## 📁 Estructura del Proyecto
+## 📁 Estructura Actualizada del Proyecto
 
 ```
 gestion_clientes/
@@ -18,37 +31,35 @@ gestion_clientes/
 │   │   ├── Client.js                # Modelo de Cliente
 │   │   ├── Sale.js                  # Modelo de Venta
 │   │   ├── Payment.js               # Modelo de Pago
-│   │   ├── MonthClosure.js          # Modelo de Cierres de Mes 
-│   │   ├── HistoricalSale.js        # Modelo de Ventas Históricas 
-│   │   ├── HistoricalPayment.js     # Modelo de Pagos Históricos 
+│   │   ├── MonthClosure.js          # Modelo de Cierres de Mes
+│   │   ├── HistoricalSale.js        # Modelo de Ventas Históricas
+│   │   ├── HistoricalPayment.js     # Modelo de Pagos Históricos
 │   │   └── index.js                 # Asociaciones
 │   ├── controllers/
 │   │   ├── salespersonController.js # Lógica vendedores
 │   │   ├── clientController.js      # Lógica clientes + cálculo deuda
 │   │   ├── saleController.js        # Lógica ventas
 │   │   ├── paymentController.js     # Lógica pagos
-│   │   ├── dashboardController.js   # Analíticas + Históricas 
-│   │   ├── monthClosureController.js # Lógica cierres de mes 
+│   │   ├── dashboardController.js   # Analíticas + Históricas
+│   │   ├── monthClosureController.js # Lógica cierres de mes
 │   │   └── importController.js      # Importación CSV
 │   ├── routes/
 │   │   ├── salespeople.js           # Rutas vendedores
 │   │   ├── clients.js               # Rutas clientes
 │   │   ├── sales.js                 # Rutas ventas
 │   │   ├── payments.js              # Rutas pagos
-│   │   ├── dashboard.js             # Rutas dashboard + históricas 
-│   │   ├── monthClosures.js         # Rutas cierres de mes 
+│   │   ├── dashboard.js             # Rutas dashboard + históricas
+│   │   ├── monthClosures.js         # Rutas cierres de mes
 │   │   └── import.js                # Rutas importación
 │   ├── scripts/
 │   │   ├── migrateSqlDataFixed.js   # Migración desde SQL
 │   │   ├── createDebtSales.js       # Crear ventas por deuda
 │   │   ├── seedTestData.js          # Datos de prueba
-│   │   ├── create_historical_tables_complete.sql # Crear tablas históricas 
-│   │   ├── extract_all_historical_data.py # Extraer datos históricos 
-│   │   └── historical_data_complete.sql # Datos históricos (557 ventas + 9,039 pagos) 
+│   │   └── historical_data_complete.sql # Datos históricos (557 ventas + 9,039 pagos)
 │   ├── uploads/                     # Carpeta para archivos CSV
 │   ├── server.js                    # Servidor principal
 │   ├── package.json                 # Dependencias backend
-│   ├── .env.example                 # Variables de entorno
+│   ├── .env.example                 # Variables de entorno (Neon)
 │   └── .gitignore
 │
 ├── frontend/                         # Aplicación React + Vite + Material-UI
@@ -57,14 +68,16 @@ gestion_clientes/
 │   │   │   ├── axiosConfig.js       # Configuración Axios
 │   │   │   └── services.js          # Servicios API
 │   │   ├── components/
-│   │   │   └── Layout.jsx           # Layout principal con navegación
+│   │   │   ├── Layout.jsx           # Layout principal con navegación
+│   │   │   └── HistoricalAnalytics.jsx # Componente analytics históricos
 │   │   ├── pages/
 │   │   │   ├── Dashboard.jsx        # KPIs, rankings, clientes
 │   │   │   ├── Salespeople.jsx      # CRUD vendedores
 │   │   │   ├── Clients.jsx          # CRUD clientes
 │   │   │   ├── Sales.jsx            # CRUD ventas
 │   │   │   ├── Payments.jsx         # CRUD pagos
-│   │   │   └── Import.jsx           # Importación CSV
+│   │   │   ├── Import.jsx           # Importación CSV
+│   │   │   └── HistoricalAnalytics.jsx # Analytics históricos
 │   │   ├── utils/
 │   │   │   └── formatters.js        # Formateo de datos
 │   │   ├── constants/
@@ -77,12 +90,13 @@ gestion_clientes/
 │   ├── .env.example                 # Variables de entorno
 │   └── .gitignore
 │
+├── instalar_y_ejecutar.ps1          # 🚀 Script de instalación automática
 ├── README.md                        # Documentación completa
-├── QUICK_START.md                   # Guía rápida (5 min)
-├── DEPLOYMENT.md                    # Guía de despliegue
-├── sample-data.csv                  # Datos de prueba
+├── QUICK_START.md                   # Guía rápida (1 minuto)
+├── SETUP_WINDOWS.md                 # Setup detallado para Windows
+├── PROJECT_SUMMARY.md               # Este archivo
 ├── .gitignore                       # Ignorar archivos
-└── PROJECT_SUMMARY.md               # Este archivo
+└── .env.example                     # ⚠️ Configurar con tus credenciales Neon
 ```
 
 ---
@@ -162,6 +176,7 @@ total_vendedor = SUM(deuda_cliente) para todos sus clientes
 - [x] **Sistema Híbrido**: Datos actuales + históricos separados
 - [x] **9,039 Pagos Históricos**: De 2021-2025 importados automáticamente
 - [x] **557 Ventas Históricas**: De 2021 migradas del sistema anterior
+- [x] **Datos 2024 Agregados**: 10 ventas + 10 pagos de ejemplo para 2024
 - [x] **Vista Dedicada**: Página separada en sidebar izquierdo
 - [x] **Filtros por Año/Mes**: Análisis granular de períodos históricos
 - [x] **Top Rankings**: Clientes y productos más importantes históricamente
@@ -264,40 +279,30 @@ POST   /api/import/clients-from-csv ✅
 | Archivo | Contenido |
 |---------|----------|
 | `README.md` | Documentación completa (setup, API, estructura) |
-| `QUICK_START.md` | Guía rápida 5 minutos |
-| `DEPLOYMENT.md` | Guía de despliegue (Render, Vercel, etc.) |
-| `.env.example` | Variables de entorno template |
+| `QUICK_START.md` | Guía rápida 1 minuto (instalación automática) |
+| `SETUP_WINDOWS.md` | Setup detallado para Windows |
+| `instalar_y_ejecutar.ps1` | 🚀 Script de instalación automática |
+| `.env.example` | Variables de entorno template (Neon) |
 | `sample-data.csv` | Datos de prueba para importación |
 
 ---
 
 ## 🚀 Como Empezar
 
-### Local Development (5 minutos)
+### Instalación Automática (1 minuto)
 
-```bash
-# Terminal 1: Backend
-cd backend
-cp .env.example .env
-npm install
-npm run dev
-
-# Terminal 2: Frontend
-cd frontend
-cp .env.example .env
-npm install
-npm run dev
+```powershell
+# Solo ejecutar este comando en PowerShell como Administrador:
+.\instalar_y_ejecutar.ps1
 ```
 
-Abre: `http://localhost:5173`
+**¡Listo!** La aplicación estará corriendo automáticamente.
 
-### Producción
+### Configuración de Base de Datos (1ra vez)
 
-Ver `DEPLOYMENT.md` para:
-- Render + Vercel (Recomendado)
-- Railway.app
-- Servidor VPS con Nginx
-- Docker setup
+1. Crear cuenta en [Neon](https://neon.tech)
+2. Copiar DATABASE_URL a `backend/.env`
+3. La aplicación funcionará automáticamente
 
 ---
 
@@ -448,6 +453,7 @@ Como mencionó en requisitos, la API está diseñada para:
 
 **Proyecto completado exitosamente ✅**
 
-Versión: 1.0.0
-Fecha: Octubre 2024
-Estado: Production Ready
+Versión: 2.1.0
+Fecha: Octubre 2025
+Estado: Production Ready con Instalación Automática
+Características: Analytics 2024 + Auto-actualización + Setup automático

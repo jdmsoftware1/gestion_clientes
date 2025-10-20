@@ -1,181 +1,137 @@
-# ⚡ Inicio Rápido
+# ⚡ Inicio Rápido - Instalación Automática
 
-Guía de 5 minutos para tener la aplicación corriendo localmente.
+## 🚀 1 Minuto para tener todo corriendo
 
-## Requisitos Mínimos
-
-- Node.js v16+
-- PostgreSQL corriendo
-- Git
-
-## Pasos
-
-### 1️⃣ Clonar y Preparar
-
-```bash
-cd gestion_clientes
+### Paso Único:
+```powershell
+# Abrir PowerShell como Administrador y ejecutar:
+.\instalar_y_ejecutar.ps1
 ```
 
-### 2️⃣ Backend
-
-```bash
-cd backend
-
-# Copiar variables de entorno
-cp .env.example .env
-
-# Editar .env (cambiar DATABASE_URL si es necesario)
-# DATABASE_URL=postgresql://usuario:password@localhost:5432/gestion_clientes
-
-# Instalar
-npm install
-
-# Ejecutar
-npm run dev
-```
-
-**Resultado**: Backend corriendo en `http://localhost:5000`
-
-### 3️⃣ Frontend (Nueva Terminal)
-
-```bash
-cd frontend
-
-# Copiar variables de entorno
-cp .env.example .env
-
-# Instalar
-npm install
-
-# Ejecutar
-npm run dev
-```
-
-**Resultado**: Frontend en `http://localhost:5173`
-
-### 4️⃣ ¡Listo!
-
-Abre en navegador: **http://localhost:5173**
+**¡Eso es todo!** La aplicación estará corriendo automáticamente en:
+- 🌐 Frontend: http://localhost:5173
+- 🔧 Backend: http://localhost:5000
 
 ---
 
-## Próximos Pasos
+## 📋 Requisitos (Automáticos)
 
-1. **Crear Vendedor**: Menú > Vendedores > "Nuevo Vendedor"
-2. **Crear Cliente**: Menú > Clientes > "Nuevo Cliente" (selecciona vendedor)
-3. **Crear Venta**: Menú > Ventas > "Nueva Venta" (automáticamente sube la deuda)
-4. **Crear Pago**: Menú > Pagos > "Nuevo Pago" (reduce la deuda)
-5. **Ver Dashboard**: Inicio > verás deuda total y analíticas
-6. **Importar CSV**: Usa el archivo `sample-data.csv` en raíz
-7. **Ver Analytics Históricos**: Menú lateral > "📊 Analytics Históricos" (557 ventas + 9,039 pagos históricos)
+- ✅ **Node.js**: Se instala automáticamente
+- ✅ **Dependencias**: Se instalan automáticamente
+- ✅ **Base de datos**: Solo necesitas configurar Neon (ver abajo)
 
 ---
 
-## Troubleshooting Rápido
+## ☁️ Configurar Base de Datos (1ra vez)
 
-### ❌ "Can't connect to DB"
-
-```bash
-# Verifica que PostgreSQL está corriendo
-psql -U postgres
-
-# O crea la BD manualmente
-createdb gestion_clientes
-```
-
-### ❌ "Port 5000 already in use"
-
-```bash
-# Backend en puerto diferente
-PORT=5001 npm run dev
-```
-
-### ❌ "API not found"
-
-- Espera a que backend arrange (2-3 segundos)
-- Verifica que terminal backend dice "Server running on port 5000"
-- Recarga el navegador
-
-### ❌ "CSV import fails"
-
-- Asegúrate columnas: `nombre_cliente,telefono_cliente,email_cliente,nombre_vendedor,deuda_inicial`
-- Sin espacios extras
-- Números decimales con punto (.)
+1. **Crear cuenta en Neon**: https://neon.tech
+2. **Crear proyecto** y copiar connection string
+3. **Editar `backend/.env`**:
+   ```env
+   DATABASE_URL=postgresql://usuario:password@ep-xxxx.neon.tech/gestion_clientes?sslmode=require
+   ```
 
 ---
 
-## Atajo: Pre-llenar Datos de Prueba
+## 🎯 Primeros Pasos en la Aplicación
 
-```bash
-# En el navegador, ve a:
-# http://localhost:5173/import
+1. **Abrir navegador**: http://localhost:5173
 
-# Sube el archivo: sample-data.csv
-# Espera confirmación ✓
-```
+2. **Crear tu primer vendedor**:
+   - Menú ≡ → Vendedores → "Nuevo Vendedor"
+   - Nombre: "Carlos García"
+   - Email: carlos@example.com
+
+3. **Crear cliente**:
+   - Menú → Clientes → "Nuevo Cliente"
+   - Nombre: "María López"
+   - Teléfono: 600123456
+   - Vendedor: "Carlos García"
+
+4. **Crear venta**:
+   - Menú → Ventas → "Nueva Venta"
+   - Cliente: "María López"
+   - Monto: 500€
+   - Descripción: "Venta inicial"
+
+5. **Ver dashboard**: Deuda total aparecerá en 500€
+
+6. **Crear pago**:
+   - Menú → Pagos → "Nuevo Pago"
+   - Cliente: "María López"
+   - Monto: 200€
+   - Método: "Efectivo"
+
+7. **Ver resultado**: Deuda ahora es 300€
 
 ---
 
-## Resumen de Rutas
+## 📊 Funcionalidades Disponibles
 
-| Ruta | Descripción |
-|------|-------------|
-| `/` | Dashboard con analíticas actuales |
-| `/historical-analytics` | Analytics históricos (557 ventas + 9,039 pagos) |
-| `/salespeople` | Gestión de vendedores |
-| `/clients` | Gestión de clientes |
-| `/sales` | Gestión de ventas |
-| `/payments` | Gestión de pagos |
-| `/import` | Importar desde CSV |
+### Dashboard Principal
+- 📈 **KPIs en tiempo real**: Deuda total, ventas y pagos
+- 👥 **Ranking de vendedores** por rendimiento
+- 👤 **Clientes morosos** (>60 días sin pagar)
+- 🎯 **Oportunidades de venta** (deuda baja)
+
+### Gestión Completa
+- 🏪 **CRUD completo**: Vendedores, Clientes, Ventas, Pagos
+- 💰 **Cuenta corriente automática**
+- 📅 **Cierres de mes personalizados**
+- 📊 **Analytics históricos** (2021-2024)
+
+### Analytics Históricos
+- 📅 **Filtros por año/mes**
+- 📊 **557 ventas + 9,039 pagos históricos**
+- 🏆 **Top clientes y productos**
+- 📈 **Tendencias históricas**
 
 ---
 
-## Comandos Útiles
+## 🆘 Problemas Comunes
 
-```bash
-# Backend
-npm run dev        # Desarrollo (hot reload)
-npm start          # Producción
-npm run migrate    # Sincronizar BD
+| Problema | Solución |
+|----------|----------|
+| Node.js no instala | Instalar manualmente desde nodejs.org |
+| Neon no conecta | Verificar DATABASE_URL en backend/.env |
+| Puertos ocupados | Ver `SETUP_WINDOWS.md` para liberar puertos |
+| Error de permisos | Ejecutar PowerShell como Administrador |
 
-# Frontend
-npm run dev        # Desarrollo
-npm run build      # Compilar para producción
-npm run preview    # Ver build localmente
+---
+
+## 🔄 Auto-Actualización
+
+El script se **actualiza automáticamente** cuando hay nuevas versiones en GitHub:
+- 📦 Detecta cambios en el repositorio
+- 💾 Hace backup de cambios locales
+- 🔄 Actualiza a última versión
+- 🔁 Se reinicia automáticamente
+
+---
+
+## 🎨 Comandos de Desarrollo (Opcional)
+
+```powershell
+# Ejecutar individualmente si es necesario:
+cd backend && npm start    # Backend en producción
+cd frontend && npm run dev # Frontend en desarrollo
+
+# Comandos útiles:
+npm run migrate  # Sincronizar base de datos
+npm run build    # Compilar frontend para producción
 ```
 
 ---
 
-## 🚀 Analytics Históricos
+## 📞 ¿Necesitas más ayuda?
 
-La aplicación incluye un sistema completo de analytics históricos con **557 ventas y 9,039 pagos históricos** importados automáticamente.
-
-### Cómo acceder:
-
-1. **Menú Lateral**: Click en "📊 Analytics Históricos"
-2. **Filtros**: Selecciona año (2020-2025), mes y vendedor
-3. **Métricas**: KPIs, rankings, clientes morosos, oportunidades
-4. **Sistema Híbrido**: Datos históricos separados de operaciones actuales
-
-### Características:
-
-- ✅ **Sistema Híbrido**: Datos actuales + históricos separados
-- ✅ **9,039 Pagos Históricos**: Cobros de 2021-2025
-- ✅ **557 Ventas Históricas**: Transacciones de 2021
-- ✅ **Filtros Avanzados**: Por año, mes y vendedor
-- ✅ **Rankings Completos**: Top vendedores, cobradores, clientes
-- ✅ **Análisis de Períodos**: Comparativas mensuales/anuales
+- 📖 **Documentación completa**: `README.md`
+- 🪟 **Setup detallado**: `SETUP_WINDOWS.md`
+- 🐛 **Solución de problemas**: `SETUP_WINDOWS.md#solucion-de-problemas`
 
 ---
 
-## Tips 💡
-
-- La deuda se calcula automáticamente en tiempo real
-- Los clientes con deuda < 50€ aparecen en verde
-- Los clientes morosos (sin pagar 60+ días) aparecen en rojo
-- Los vendedores se crean automáticamente al importar CSV
-- Todos los datos se sincronizan entre frontend y backend
-
----
-
-**¿Necesitas ayuda?** Ver `README.md` para documentación completa.
+**Versión**: 2.1.0
+**Instalación**: 100% Automática
+**Tiempo**: 1 minuto
+**Última actualización**: Octubre 2025
