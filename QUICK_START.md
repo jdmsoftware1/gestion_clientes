@@ -14,9 +14,11 @@
 
 ---
 
-## 📋 Requisitos (Automáticos)
+## 📋 Requisitos (Todo automático)
 
-- ✅ **Node.js**: Se instala automáticamente
+- ✅ **Git**: Se instala automáticamente si no existe
+- ✅ **Node.js**: Se instala automáticamente si no existe
+- ✅ **Repositorio**: Se clona automáticamente desde GitHub
 - ✅ **Dependencias**: Se instalan automáticamente
 - ✅ **Base de datos**: Solo necesitas configurar Neon (ver abajo)
 
@@ -30,6 +32,25 @@
    ```env
    DATABASE_URL=postgresql://usuario:password@ep-xxxx.neon.tech/gestion_clientes?sslmode=require
    ```
+
+---
+
+## 🔧 ¿Qué hace exactamente el script?
+
+### Fase 1: Preparación
+- 📦 **Instala Git** (si no está presente)
+- 📥 **Clona repositorio** desde `https://github.com/jdmsoftware1/gestion_clientes.git`
+- 📦 **Instala Node.js** (si no está presente)
+
+### Fase 2: Configuración
+- 📦 **Instala dependencias** del backend
+- 📦 **Instala dependencias** del frontend
+- 🔧 **Inicia servicios** en segundo plano
+
+### Fase 3: Verificación
+- ✅ **Espera confirmación** de que backend está listo (puerto 5000)
+- ✅ **Espera confirmación** de que frontend está listo (puerto 5173)
+- 🎉 **Muestra URLs** de acceso
 
 ---
 

@@ -18,6 +18,139 @@ function Test-CommandExists {
     }
 }
 
+# Función para instalar Git
+function Install-Git {
+    Write-Host "`n📦 Verificando Git..." -ForegroundColor Cyan
+    if (Test-CommandExists git) {
+        $gitVersion = git --version
+        Write-Host "✅ Git ya está instalado: $gitVersion" -ForegroundColor Green
+        return $true
+    }
+
+    Write-Host "❌ Git no está instalado. Instalando..." -ForegroundColor Yellow
+
+    # Intentar instalar con winget
+    if (Test-CommandExists winget) {
+        Write-Host "Instalando Git con winget..." -ForegroundColor Cyan
+        try {
+            winget install --id Git.Git -e --source winget
+            if ($LASTEXITCODE -eq 0) {
+                # Recargar PATH
+                $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+                Write-Host "✅ Git instalado correctamente" -ForegroundColor Green
+                return $true
+            }
+        } catch {
+            Write-Host "⚠️ Error instalando Git con winget" -ForegroundColor Yellow
+        }
+    }
+
+    # Instalar con chocolatey si winget falla
+    if (Test-CommandExists choco) {
+        Write-Host "Instalando Git con Chocolatey..." -ForegroundColor Cyan
+        try {
+            choco install git -y
+            if ($LASTEXITCODE -eq 0) {
+                $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+                Write-Host "✅ Git instalado correctamente" -ForegroundColor Green
+                return $true
+            }
+        } catch {
+            Write-Host "⚠️ Error instalando Git con Chocolatey" -ForegroundColor Yellow
+        }
+    }
+
+    Write-Host "❌ No se pudo instalar Git automáticamente" -ForegroundColor Red
+    Write-Host "Instala Git manualmente desde https://git-scm.com/download/win" -ForegroundColor Yellow
+    return $false
+}
+
+# Función para clonar el repositorio
+function Clone-Repository {
+    param($repoUrl, $targetPath)
+
+    Write-Host "`n📥 Clonando repositorio..." -ForegroundColor Cyan
+    Write-Host "URL: $repoUrl" -ForegroundColor Gray
+    Write-Host "Destino: $targetPath" -ForegroundColor Gray
+
+    try {
+        # Crear directorio padre si no existe
+        $parentDir = Split-Path $targetPath -Parent
+        if (-not (Test-Path $parentDir)) {
+            New-Item -ItemType Directory -Path $parentDir -Force | Out-Null
+        }
+
+        # Clonar el repositorio
+        git clone $repoUrl $targetPath
+
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "✅ Repositorio clonado correctamente" -ForegroundColor Green
+            return $true
+        } else {
+            Write-Host "❌ Error clonando el repositorio" -ForegroundColor Red
+            return $false
+        }
+    } catch {
+        Write-Host "❌ Error clonando el repositorio: $_" -ForegroundColor Red
+        return $false
+    }
+}
+
+# 0. Verificar e instalar Git, y clonar repositorio si es necesario
+if (-not (Install-Git)) {
+    exit 1
+}
+
+# Verificar si estamos en un repositorio git
+$currentPath = Get-Location
+$repoUrl = "https://github.com/jdmsoftware1/gestion_clientes.git"
+$projectName = "gestion_clientes"
+
+if (-not (Test-Path ".git")) {
+    Write-Host "`n🔍 No se detectó repositorio git local" -ForegroundColor Yellow
+
+    # Verificar si estamos en el directorio correcto
+    if ((Split-Path $currentPath -Leaf) -eq $projectName) {
+        Write-Host "📁 Estamos en el directorio del proyecto, pero no es un repo git" -ForegroundColor Yellow
+        Write-Host "Clonando repositorio en directorio temporal y moviendo archivos..." -ForegroundColor Cyan
+
+        # Crear directorio temporal
+        $tempDir = Join-Path $env:TEMP "gestion_clientes_temp"
+        if (Test-Path $tempDir) {
+            Remove-Item $tempDir -Recurse -Force
+        }
+
+        # Clonar a temporal
+        if (Clone-Repository $repoUrl $tempDir) {
+            # Copiar archivos del repo clonado al directorio actual
+            Write-Host "Copiando archivos del repositorio..." -ForegroundColor Cyan
+            Get-ChildItem $tempDir | Copy-Item -Destination $currentPath -Recurse -Force
+
+            # Limpiar temporal
+            Remove-Item $tempDir -Recurse -Force
+            Write-Host "✅ Archivos del repositorio copiados correctamente" -ForegroundColor Green
+        } else {
+            Write-Host "❌ Error obteniendo los archivos del repositorio" -ForegroundColor Red
+            exit 1
+        }
+    } else {
+        Write-Host "📁 No estamos en el directorio del proyecto" -ForegroundColor Yellow
+        Write-Host "Clonando repositorio completo..." -ForegroundColor Cyan
+
+        # Clonar directamente en el directorio actual
+        $targetPath = Join-Path $currentPath $projectName
+        if (Clone-Repository $repoUrl $targetPath) {
+            Set-Location $targetPath
+            Write-Host "✅ Proyecto clonado. Cambiando al directorio del proyecto..." -ForegroundColor Green
+        } else {
+            Write-Host "❌ Error clonando el repositorio" -ForegroundColor Red
+            exit 1
+        }
+    }
+} else {
+    Write-Host "`n✅ Repositorio git detectado" -ForegroundColor Green
+}
+
 # Función para actualizar el repositorio
 function Update-Repository {
     Write-Host "`n🔄 Verificando actualizaciones del repositorio..." -ForegroundColor Cyan

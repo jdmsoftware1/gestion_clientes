@@ -11,6 +11,8 @@ Ya no necesitas seguir guías complejas. Solo ejecuta este comando:
 
 ### ✨ Lo que hace automáticamente:
 
+- ✅ **Instala Git** si no está presente (winget/choco)
+- ✅ **Clona el repositorio** desde `https://github.com/jdmsoftware1/gestion_clientes.git`
 - ✅ **Instala Node.js** si no está presente
 - ✅ **Instala todas las dependencias** del backend y frontend
 - ✅ **Configura la base de datos** (Neon recomendado)
@@ -29,8 +31,10 @@ Ya no necesitas seguir guías complejas. Solo ejecuta este comando:
 
 ### 🔧 Requisitos Automáticos
 
+- Git se instala automáticamente si no existe
 - Node.js se instala automáticamente si no existe
 - npm se instala con Node.js
+- Repositorio se clona automáticamente desde GitHub
 - Base de datos en Neon (configurar manualmente)
 
 ---
@@ -98,6 +102,23 @@ CORS_ORIGIN=http://localhost:5173
 
 ## 🆘 Solución de Problemas
 
+### ❌ "Git no se instala"
+```powershell
+# Instalar manualmente desde:
+# https://git-scm.com/download/win
+# Luego reiniciar PowerShell y ejecutar el script nuevamente
+```
+
+### ❌ "No se puede clonar el repositorio"
+```powershell
+# Verificar conexión a internet
+# Verificar que no hay firewall bloqueando Git
+# Si el error persiste, clona manualmente:
+git clone https://github.com/jdmsoftware1/gestion_clientes.git
+cd gestion_clientes
+.\instalar_y_ejecutar.ps1
+```
+
 ### ❌ "Node.js no se instala"
 ```powershell
 # Instalar manualmente desde:
@@ -131,7 +152,30 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ---
 
-## 🔄 Auto-Actualización
+## 🔧 ¿Qué hace exactamente el script?
+
+### Fase 1: Preparación del Entorno
+- 📦 **Verifica Git**: Instala si no existe (winget → chocolatey)
+- 📥 **Clona repositorio**: Desde `https://github.com/jdmsoftware1/gestion_clientes.git`
+- 📦 **Verifica Node.js**: Instala si no existe (winget)
+
+### Fase 2: Configuración del Proyecto
+- 📦 **Instala dependencias backend**: `npm install` en `/backend`
+- 📦 **Instala dependencias frontend**: `npm install` en `/frontend`
+- 🔄 **Auto-actualización**: Verifica si hay nuevas versiones en GitHub
+
+### Fase 3: Inicio de Servicios
+- 🔧 **Inicia backend**: `npm start` en puerto 5000
+- 🌐 **Inicia frontend**: `npm run dev` en puerto 5173
+- ⏳ **Espera confirmación**: Verifica que ambos servicios respondan
+
+### Fase 4: Verificación Final
+- ✅ **Muestra URLs**: Frontend y backend listos
+- 🎉 **Confirmación**: Aplicación completamente funcional
+
+---
+
+## 🚀 Escenarios de Uso
 
 El script se **actualiza automáticamente** cuando hay nuevas versiones:
 
@@ -235,6 +279,7 @@ npm run build
 
 **Versión**: 2.1.0
 **Sistema**: Windows 10/11 con PowerShell
-**Instalación**: 100% Automática
+**Instalación**: 100% Automática + Git + Clone
 **Base de datos**: Neon Cloud (PostgreSQL)
+**Repositorio**: https://github.com/jdmsoftware1/gestion_clientes.git
 **Última actualización**: Octubre 2025

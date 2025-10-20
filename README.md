@@ -4,28 +4,40 @@ Una aplicación Full-Stack profesional para gestionar vendedores, clientes, vent
 
 ## 🚀 Instalación Automática (Equipo Nuevo)
 
-### ⚡ Para Windows - Instalación y ejecución en 1 solo paso:
+#### 🚀 Instalación Automática (Recomendado)
+
+**Solo necesitas ejecutar un comando:**
 
 ```powershell
-# En PowerShell como Administrador
+# Abrir PowerShell como Administrador y ejecutar:
 .\instalar_y_ejecutar.ps1
 ```
 
-Este script automáticamente:
-- ✅ Instala Node.js si no está presente
-- ✅ Instala todas las dependencias del backend y frontend
-- ✅ Inicia el backend (`npm start`)
-- ✅ Inicia el frontend (`npm run dev`)
-- ✅ Espera a que ambos servicios estén listos
+#### ✨ Lo que hace automáticamente:
 
-**¡Listo!** La aplicación estará disponible automáticamente en:
-- 🌐 Frontend: http://localhost:5173
-- 🔧 Backend API: http://localhost:5000
+- ✅ **Instala Git** si no está presente (winget/choco)
+- ✅ **Clona el repositorio** desde GitHub si no existe localmente
+- ✅ **Instala Node.js** si no está presente
+- ✅ **Instala todas las dependencias** del backend y frontend
+- ✅ **Configura la base de datos** (Neon recomendado)
+- ✅ **Inicia el backend** (`npm start`)
+- ✅ **Inicia el frontend** (`npm run dev`)
+- ✅ **Se auto-actualiza** si hay nuevas versiones
+- ✅ **Espera confirmación** de que ambos servicios están listos
 
-### 📋 Requisitos Mínimos:
-- Windows 10/11
-- Conexión a internet (para instalar Node.js)
-- **Cuenta en Neon** (PostgreSQL en la nube) - https://neon.tech
+#### 🎯 Resultado:
+- 🌐 Frontend corriendo en: http://localhost:5173
+- 🔧 Backend corriendo en: http://localhost:5000
+
+---
+
+## 📋 Requisitos
+
+- **Windows 10/11**
+- **Conexión a internet** (para descargar dependencias y clonar repo)
+- **Cuenta en Neon** para la base de datos (se configura automáticamente)
+
+**Nota:** El script instala todo lo necesario automáticamente.
 
 ### 🆘 Solución de Problemas:
 - **Error de permisos:** Ejecuta PowerShell como Administrador
