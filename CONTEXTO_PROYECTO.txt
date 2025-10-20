@@ -1,0 +1,385 @@
+# CONTEXTO COMPLETO DEL PROYECTO - GESTIÓN DE CLIENTES
+# =====================================================================
+# Fecha: 17 de Octubre 2025 - ACTUALIZADO CON ANALYTICS AVANZADOS
+# Sistema: Gestión de Clientes con Dashboard + Analytics Empresariales
+# Stack: Node.js + Express + React + PostgreSQL + Sequelize + Chart.js
+
+# =====================================================================
+# 🚀 PROMPT COMPLETO PARA REGENERAR EL PROYECTO
+# =====================================================================
+
+"""
+Necesito que crees un sistema completo de gestión de clientes para una empresa de cobros con múltiples vendedores. Las características específicas son:
+
+## CONTEXTO DEL NEGOCIO:
+- Empresa de cobros con 6 vendedores (Bego, David, Yaiza, BegoJi, fe, Jimenez)
+- Cada vendedor tiene clientes asignados con deudas pendientes
+- Se registran ventas (deudas) y pagos de los clientes
+- Necesitan análisis de rendimiento por vendedor y período
+- Sistema de cierres mensuales para análisis histórico
+
+## STACK TECNOLÓGICO OBLIGATORIO:
+- **Backend**: Node.js + Express.js + Sequelize ORM
+- **Frontend**: React + Material-UI (MUI)
+- **Base de datos**: PostgreSQL
+- **Gráficos**: Chart.js + react-chartjs-2
+- **Fechas**: Transformación automática snake_case ↔ camelCase
+
+## MODELOS DE DATOS ESPECÍFICOS:
+
+### Salesperson (Vendedores):
+- id (UUID), name, email, created_at, updated_at
+
+### Client (Clientes):
+- id (UUID), internalCode, name, phone, email, address
+- salespersonId (FK), created_at, updated_at
+
+### Sale (Ventas/Deudas):
+- id (UUID), amount (DECIMAL), description
+- clientId (FK), created_at, updated_at
+
+### Payment (Pagos):
+- id (UUID), amount (DECIMAL), description
+- clientId (FK), created_at, updated_at
+
+### MonthClosure (Cierres Mensuales):
+- id (UUID), name, dateFrom, dateTo, salespersonId (nullable)
+- totalSales, totalPayments, totalDebt, netAmount
+- description, closedBy, created_at, updated_at
+
+## FUNCIONALIDADES CORE REQUERIDAS:
+
+### 1. DASHBOARD BÁSICO:
+- KPIs: Deuda Total, Ventas período, Pagos período, Neto
+- Rankings de Vendedores (por ventas)
+- Rankings de Cobradores (por pagos)
+- Filtros por fecha (Últimos 30 días, personalizado, cierres guardados)
+- Filtros por vendedor (contexto global)
+- Listas de morosos y oportunidades con búsqueda y filtros
+
+### 2. GESTIÓN DE DATOS:
+- CRUD completo de clientes, ventas y pagos
+- Importación masiva de datos desde archivos
+- Sistema de cierres mensuales
+- Batería de tests para verificar funcionamiento
+
+### 3. ANÁLISIS AVANZADOS (SEPARADO DEL DASHBOARD BÁSICO):
+- Gráficos de tendencias temporales (Chart.js)
+- Comparativas entre vendedores
+- Distribución de deuda por rangos
+- KPIs avanzados: tasa conversión, tiempo cobro, eficiencia
+- Análisis de rentabilidad con ROI y comisiones
+- Identificación de deuda irrecuperable con scoring
+- Sistema de alertas inteligentes con filtros
+- Análisis predictivo básico con scoring de probabilidad de pago
+- Modo demo/real híbrido para presentaciones
+
+## CARACTERÍSTICAS TÉCNICAS CRÍTICAS:
+
+### Problema de Fechas (DEBE SOLUCIONARSE):
+- Sequelize devuelve fechas como `created_at` (snake_case)
+- Frontend React espera `createdAt` (camelCase)
+- **Solución**: Utilidad `transformDatesForFrontend()` en controllers
+- Aplicar en saleController.js y paymentController.js
+
+### Datos Simulados:
+- Crear ~300 clientes con deudas iniciales
+- 293 ventas simuladas con descripción "Deuda inicial - [NOMBRE]"
+- **IMPORTANTE**: Todas las ventas simuladas en fecha fija 31/12/2024
+- Total deudas simuladas: ~€88,114.49
+- Distribuir entre los 6 vendedores proporcionalmente
+
+### Filtros de Fecha:
+- Dashboard debe inicializar con últimos 30 días REALES (no fechas vacías)
+- Botón "Últimos 30 días" debe calcular fechas (hoy - 30 días hasta hoy)
+- Filtros servidor deben incluir todo el día (dateToEnd = dateTo + ' 23:59:59')
+- Cierres globales (salespersonId null) deben aparecer para todos los vendedores
+
+### Contexto de Vendedor:
+- SalespersonContext global con opción "TODOS"
+- Todos los componentes respetan el vendedor seleccionado
+- Filtros se aplican consistentemente en toda la aplicación
+
+## ESTRUCTURA DE ARCHIVOS ESPECÍFICA:
+
+### Backend:
+```
+controllers/
+├── dashboardController.js (KPIs básicos, rankings)
+├── analyticsController.js (análisis avanzados - SEPARADO)
+├── saleController.js (con transformación fechas)
+├── paymentController.js (con transformación fechas)
+├── monthClosureController.js (cierres globales)
+├── clientController.js, importController.js
+
+routes/
+├── dashboard.js, analytics.js, sales.js, payments.js
+├── clients.js, monthClosures.js, tests.js
+
+utils/
+└── transformDates.js (snake_case → camelCase)
+
+scripts/
+├── updateSalesToPastDate.js (mover ventas a 31/12/2024)
+└── createOctoberClosureSimple.js (crear cierres ejemplo)
+```
+
+### Frontend:
+```
+pages/
+├── Dashboard.jsx (dashboard básico estable)
+└── Analytics.jsx (análisis avanzados con tabs)
+
+components/charts/
+├── TrendChart.jsx (líneas - Chart.js)
+├── ComparisonChart.jsx (barras - Chart.js)
+├── DebtDistributionChart.jsx (circular - Chart.js)
+└── KPICard.jsx (tarjetas avanzadas)
+
+api/
+├── services.js (APIs básicas)
+└── analyticsAPI.js (APIs análisis avanzados)
+
+context/
+└── SalespersonContext.js (vendedor global)
+```
+
+## ENDPOINTS API REQUERIDOS:
+```
+/api/dashboard/kpis
+/api/dashboard/rankings
+/api/dashboard/collectors
+/api/analytics/kpis
+/api/analytics/trends
+/api/analytics/comparison
+/api/analytics/profitability
+/api/analytics/bad-debt
+/api/sales, /api/payments, /api/clients
+/api/month-closures, /api/tests
+```
+
+## COMANDOS DE INSTALACIÓN:
+```bash
+# Backend
+npm init -y
+npm install express cors dotenv sequelize pg bcryptjs jsonwebtoken
+
+# Frontend
+npx create-react-app frontend
+cd frontend
+npm install @mui/material @emotion/react @emotion/styled
+npm install @mui/icons-material axios
+npm install chart.js react-chartjs-2
+```
+
+## VALIDACIONES CRÍTICAS:
+1. ✅ Fechas llegan como `createdAt` al frontend
+2. ✅ Filtros "Últimos 30 días" devuelven arrays vacíos (no hay ventas 2025)
+3. ✅ Ventas simuladas en 31/12/2024 no interfieren con filtros actuales
+4. ✅ Cierres globales aparecen en selector para todos los vendedores
+5. ✅ Rankings respetan filtros de fecha correctamente
+6. ✅ Análisis avanzados separados del dashboard básico
+
+## RESULTADO ESPERADO:
+Sistema completo con dashboard básico estable + análisis avanzados modulares, datos simulados realistas, filtros funcionando correctamente, y preparado para registrar ventas/pagos reales sin afectar el funcionamiento existente.
+"""
+
+# =====================================================================
+
+## DESCRIPCIÓN DEL PROYECTO
+Sistema de gestión de clientes para empresa de cobros con múltiples vendedores.
+Permite gestionar clientes, ventas, pagos, y generar análisis de rendimiento.
+
+## ESTRUCTURA ACTUAL
+```
+backend/
+├── controllers/
+│   ├── saleController.js (✅ Fechas corregidas)
+│   ├── paymentController.js (✅ Fechas corregidas)
+│   ├── dashboardController.js (✅ Filtros corregidos)
+│   ├── monthClosureController.js (✅ Cierres globales)
+│   ├── clientController.js
+│   ├── importController.js
+│   └── analyticsController.js (🆕 NUEVO - Análisis avanzados)
+├── models/
+│   ├── Sale.js
+│   ├── Payment.js
+│   ├── Client.js
+│   ├── Salesperson.js
+│   └── MonthClosure.js
+├── routes/
+│   └── analytics.js (🆕 NUEVO)
+├── utils/
+│   └── transformDates.js (🆕 NUEVO - Conversión snake_case → camelCase)
+└── scripts/
+    ├── updateSalesToPastDate.js (✅ Ejecutado)
+    └── createOctoberClosureSimple.js (✅ Ejecutado)
+
+frontend/
+├── src/
+│   ├── pages/
+│   │   └── Dashboard.jsx (✅ Filtros de fecha corregidos)
+│   ├── api/
+│   │   ├── services.js
+│   │   └── analyticsAPI.js (🆕 NUEVO)
+│   └── context/
+│       └── SalespersonContext.js
+```
+
+## PROBLEMAS RESUELTOS
+
+### 1. ✅ PROBLEMA DE FECHAS "Invalid Date"
+**Causa**: Sequelize devolvía fechas como `created_at` (snake_case) pero frontend esperaba `createdAt` (camelCase)
+**Solución**: 
+- Creada utilidad `transformDatesForFrontend()` en `/utils/transformDates.js`
+- Aplicada en `saleController.js` y `paymentController.js`
+- Fechas ahora llegan como `createdAt` y `updatedAt`
+
+### 2. ✅ VENTAS SIMULADAS EN FECHAS INCORRECTAS
+**Problema**: 293 ventas simuladas distribuidas en octubre 2025, interfiriendo con filtros
+**Solución**: 
+- Script `updateSalesToPastDate.js` movió todas las ventas a 31/12/2024
+- Total: €88,114.49 en deudas iniciales
+- Ahora no interfieren con filtros de fechas actuales
+
+### 3. ✅ FILTROS DE FECHA NO FUNCIONABAN
+**Problema**: Botón "Últimos 30 días" establecía fechas vacías, mostrando todos los datos
+**Solución**:
+- Corregido `handleResetPeriod()` para calcular fechas reales (hoy - 30 días)
+- Inicialización de fechas con valores reales en lugar de strings vacíos
+- Filtros de servidor corregidos para incluir todo el día (23:59:59)
+
+### 4. ✅ SELECTOR DE CIERRES NO MOSTRABA CIERRES GLOBALES
+**Problema**: Cierres con `salespersonId: null` no aparecían al filtrar por vendedor
+**Solución**: 
+- Modificado `monthClosureController.js` con `Op.or` para incluir cierres globales
+- Ahora muestra cierres específicos del vendedor + cierres globales
+
+## DATOS ACTUALES
+- **Vendedores**: 6 (Bego, David, Yaiza, BegoJi, fe, Jimenez)
+- **Clientes**: ~300 con deudas iniciales
+- **Ventas simuladas**: 293 ventas en 31/12/2024 (€88,114.49 total)
+- **Cierres de mes**: 2 disponibles ("Octubre" y "Primer Cierre Octubre")
+- **Pagos**: 0 (sistema preparado para registrar pagos reales)
+
+## FUNCIONALIDADES ACTUALES
+✅ Dashboard con KPIs básicos (Deuda Total, Ventas, Pagos, Neto)
+✅ Rankings de Vendedores y Cobradores
+✅ Filtros por fecha (Últimos 30 días, personalizado, cierres guardados)
+✅ Filtros por vendedor
+✅ Gestión de clientes (CRUD)
+✅ Gestión de ventas y pagos
+✅ Importación de datos
+✅ Cierres de mes
+✅ Batería de tests del dashboard
+
+## MEJORAS SOLICITADAS (EN PROGRESO)
+El usuario pidió implementar TODAS las siguientes mejoras de forma ordenada:
+
+### 📊 1. GRÁFICOS VISUALES CON CHART.JS
+- Tendencias temporales (ventas/pagos por día/semana/mes)
+- Comparativas entre vendedores
+- Distribución de deuda por rangos
+- Gráficos de barras, líneas, circulares
+
+### 💰 2. ANÁLISIS DE RENTABILIDAD
+- ROI por vendedor
+- Margen de beneficio
+- Flujo de caja predictivo
+- Análisis de deuda irrecuperable
+
+### 🔔 3. SISTEMA DE ALERTAS INTELIGENTES
+- Clientes con deuda > X días sin pagar
+- Vendedores con rendimiento bajo
+- Metas no alcanzadas
+- Oportunidades de cobro prioritarias
+
+### 📈 4. ANÁLISIS PREDICTIVO BÁSICO
+- Predicción de ventas futuras
+- Probabilidad de cobro por cliente
+- Identificación de estacionalidad
+- Scoring de riesgo de impago
+
+### 🎯 5. GESTIÓN DE OBJETIVOS
+- Metas mensuales por vendedor
+- Seguimiento en tiempo real
+- Sistema de gamificación
+- Cálculo automático de bonificaciones
+
+### 📋 6. REPORTES EJECUTIVOS
+- Informes automáticos por email
+- Dashboard ejecutivo para gerencia
+- Reportes personalizados por rol
+- Exportación a Excel/PDF
+
+## ESTADO ACTUAL DE IMPLEMENTACIÓN
+🟢 **COMPLETADO**:
+- Estructura modular para análisis avanzados
+- Controller `analyticsController.js` con KPIs avanzados
+- API endpoints para análisis (`/api/analytics/*`)
+- Métricas implementadas:
+  * Tasa de conversión (% clientes que pagan)
+  * Tiempo promedio de cobro
+  * Eficiencia por vendedor (ventas/día)
+  * Distribución de deuda por rangos
+  * Datos para gráficos de tendencias
+  * Comparación entre vendedores
+
+🟡 **EN PROGRESO**:
+- Implementación de gráficos visuales con Chart.js
+
+🔴 **PENDIENTE**:
+- Frontend para análisis avanzados
+- Sistema de alertas
+- Análisis predictivo
+- Gestión de objetivos
+- Reportes ejecutivos
+
+## TECNOLOGÍAS UTILIZADAS
+- **Backend**: Node.js, Express.js, Sequelize ORM
+- **Frontend**: React, Material-UI (MUI)
+- **Base de datos**: PostgreSQL
+- **Autenticación**: Contexto de vendedor
+- **Fechas**: Transformación automática snake_case ↔ camelCase
+- **Análisis**: SQL queries optimizadas para métricas
+
+## COMANDOS IMPORTANTES EJECUTADOS
+```bash
+# Mover ventas simuladas a fecha fija
+node scripts/updateSalesToPastDate.js
+
+# Crear cierre de octubre con ventas distribuidas
+node scripts/createOctoberClosureSimple.js
+
+# Verificar filtros de fecha
+node scripts/testDateFilters.js
+```
+
+## ENDPOINTS API DISPONIBLES
+```
+/api/dashboard/kpis
+/api/dashboard/rankings
+/api/dashboard/collectors
+/api/analytics/kpis (🆕 NUEVO)
+/api/analytics/trends (🆕 NUEVO)
+/api/analytics/comparison (🆕 NUEVO)
+/api/sales
+/api/payments
+/api/clients
+/api/month-closures
+/api/tests
+```
+
+## PRÓXIMOS PASOS
+1. Continuar con implementación de gráficos Chart.js
+2. Crear componentes React para análisis avanzados
+3. Implementar sistema de alertas
+4. Desarrollar análisis predictivo
+5. Crear gestión de objetivos
+6. Implementar reportes ejecutivos
+
+## NOTAS IMPORTANTES
+- Las ventas simuladas están en 31/12/2024 para no interferir con análisis actuales
+- Los filtros de fecha funcionan correctamente para períodos sin datos (devuelven arrays vacíos)
+- El sistema está preparado para registrar ventas y pagos reales con fechas correctas
+- Todos los cambios están separados del código estable existente

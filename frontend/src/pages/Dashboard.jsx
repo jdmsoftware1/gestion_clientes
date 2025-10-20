@@ -30,6 +30,7 @@ import {
 } from '@mui/material';
 import { dashboardAPI, monthClosuresAPI, testsAPI } from '../api/services';
 import { useSalesperson } from '../context/SalespersonContext';
+import HistoricalAnalytics from '../components/HistoricalAnalytics';
 
 const DashboardCard = ({ title, value, currency = false }) => (
   <Card sx={{ height: '100%' }}>
@@ -87,6 +88,9 @@ const Dashboard = () => {
   const [openTestsModal, setOpenTestsModal] = useState(false);
   const [testResults, setTestResults] = useState(null);
   const [runningTests, setRunningTests] = useState(false);
+  
+  // Historical analytics state
+  const [showHistoricalAnalytics, setShowHistoricalAnalytics] = useState(false);
 
   useEffect(() => {
     if (selectedSalesperson) {
@@ -288,6 +292,14 @@ const Dashboard = () => {
           Dashboard
         </Typography>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Button
+            variant={showHistoricalAnalytics ? "contained" : "outlined"}
+            size="small"
+            onClick={() => setShowHistoricalAnalytics(!showHistoricalAnalytics)}
+            sx={{ minWidth: '140px' }}
+          >
+            📊 Analytics Históricos
+          </Button>
           <Button
             variant="outlined"
             size="small"
@@ -562,6 +574,13 @@ const Dashboard = () => {
           </Table>
         </TableContainer>
       </Paper>
+
+      {/* Historical Analytics */}
+      {showHistoricalAnalytics && (
+        <Box sx={{ mt: 4 }}>
+          <HistoricalAnalytics />
+        </Box>
+      )}
 
       {/* Modal para Crear Cierre */}
       <Dialog open={openClosureModal} onClose={() => setOpenClosureModal(false)} maxWidth="sm" fullWidth>

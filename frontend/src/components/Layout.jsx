@@ -22,6 +22,9 @@ import PersonIcon from '@mui/icons-material/Person';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import PaymentIcon from '@mui/icons-material/Payment';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import BugReportIcon from '@mui/icons-material/BugReport';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSalesperson } from '../context/SalespersonContext';
 
@@ -55,6 +58,10 @@ const Layout = ({ children }) => {
     { label: 'Ventas', icon: <ShoppingCartIcon />, path: '/sales' },
     { label: 'Pagos', icon: <PaymentIcon />, path: '/payments' },
     { label: 'Importar CSV', icon: <UploadFileIcon />, path: '/import' },
+    { label: 'Análisis Avanzados', icon: <AssessmentIcon />, path: '/analytics' },
+    { label: 'Alertas', icon: <NotificationsIcon />, path: '/alerts' },
+    { label: '🧪 Test Analytics', icon: <BugReportIcon />, path: '/test-analytics' },
+    { label: '🧪 Test Alertas', icon: <BugReportIcon />, path: '/test-alerts' },
   ];
 
   return (
@@ -78,7 +85,7 @@ const Layout = ({ children }) => {
           {/* Logo/Título */}
           <Box sx={{ px: 2, pb: 3, textAlign: 'center' }}>
             <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#ffffff' }}>
-              📊 Tienda
+              📊 Decoraciones Ángel E Hijas
             </span>
           </Box>
 

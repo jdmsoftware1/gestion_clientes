@@ -1,4 +1,5 @@
 import axiosInstance from './axiosConfig';
+import analyticsAPI from './analyticsAPI';
 
 // Salespeople API
 export const salespeopleAPI = {
@@ -45,6 +46,7 @@ export const dashboardAPI = {
   getCollectorsRankings: (params) => axiosInstance.get('/dashboard/collectors', { params }),
   getDelinquentClients: (params) => axiosInstance.get('/dashboard/delinquent', { params }),
   getSalesOpportunities: (params) => axiosInstance.get('/dashboard/opportunities', { params }),
+  getHistoricalAnalytics: (params) => axiosInstance.get('/dashboard/historical', { params }),
 };
 
 // Import API
@@ -74,3 +76,6 @@ export const testsAPI = {
   runDashboardTests: () => axiosInstance.get('/tests/dashboard'),
   testEndpoint: (data) => axiosInstance.post('/tests/endpoint', data),
 };
+
+// Export analytics API
+export { analyticsAPI };

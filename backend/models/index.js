@@ -3,6 +3,8 @@ import Client from './Client.js';
 import Sale from './Sale.js';
 import Payment from './Payment.js';
 import MonthClosure from './MonthClosure.js';
+import HistoricalSale from './HistoricalSale.js';
+import HistoricalPayment from './HistoricalPayment.js';
 
 // Asociaciones
 Salesperson.hasMany(Client, { foreignKey: 'salespersonId', as: 'clients' });
@@ -18,4 +20,4 @@ Payment.belongsTo(Client, { foreignKey: 'clientId', as: 'client' });
 Salesperson.hasMany(MonthClosure, { foreignKey: 'salespersonId', as: 'closures' });
 MonthClosure.belongsTo(Salesperson, { foreignKey: 'salespersonId', as: 'salesperson' });
 
-export { Salesperson, Client, Sale, Payment, MonthClosure };
+export { Salesperson, Client, Sale, Payment, MonthClosure, HistoricalSale, HistoricalPayment };

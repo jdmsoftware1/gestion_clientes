@@ -1,5 +1,5 @@
 import sequelize from '../config/database.js';
-import { Salesperson, Client, Sale, Payment } from '../models/index.js';
+import { Salesperson, Client, Sale, Payment, HistoricalSale, HistoricalPayment } from '../models/index.js';
 
 // Get dashboard KPIs
 export const getDashboardKPIs = async (req, res) => {
@@ -268,6 +268,135 @@ export const getSalesOpportunities = async (req, res) => {
     );
   } catch (error) {
     console.error('Error in getSalesOpportunities:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Get historical analytics (pre-October 2025)
+export const getHistoricalAnalytics = async (req, res) => {
+  try {
+    const { year, month } = req.query;
+    
+    // Construir filtros de fecha para datos históricos
+    let dateFilter = '';
+    const replacements = {};
+    
+    if (year) {
+      if (month) {
+        dateFilter = `AND EXTRACT(YEAR FROM fechaCom) = :year AND EXTRACT(MONTH FROM fechaCom) = :month`;
+        replacements.year = year;
+        replacements.month = month;
+      } else {
+        dateFilter = `AND EXTRACT(YEAR FROM fechaCom) = :year`;
+        replacements.year = year;
+      }
+    }
+    
+    // Obtener ventas históricas
+    const historicalSalesQuery = `
+      SELECT 
+        EXTRACT(YEAR FROM fechaCom) as year,
+        EXTRACT(MONTH FROM fechaCom) as month,
+        COUNT(*) as total_transactions,
+        SUM(total) as total_sales,
+        AVG(total) as avg_sale,
+        MIN(fechaCom) as first_sale,
+        MAX(fechaCom) as last_sale
+      FROM historical_sales
+      WHERE 1=1 ${dateFilter}
+      GROUP BY EXTRACT(YEAR FROM fechaCom), EXTRACT(MONTH FROM fechaCom)
+      ORDER BY year DESC, month DESC
+    `;
+    
+    // Obtener pagos históricos
+    const historicalPaymentsQuery = `
+      SELECT 
+        EXTRACT(YEAR FROM fecha_pago) as year,
+        EXTRACT(MONTH FROM fecha_pago) as month,
+        COUNT(*) as total_payments,
+        SUM(cantidad_pago) as total_collected,
+        AVG(cantidad_pago) as avg_payment,
+        MIN(fecha_pago) as first_payment,
+        MAX(fecha_pago) as last_payment
+      FROM historical_payments
+      WHERE fecha_pago IS NOT NULL ${dateFilter.replace('fechaCom', 'fecha_pago')}
+      GROUP BY EXTRACT(YEAR FROM fecha_pago), EXTRACT(MONTH FROM fecha_pago)
+      ORDER BY year DESC, month DESC
+    `;
+    
+    // Top clientes históricos por ventas
+    const topCustomersQuery = `
+      SELECT 
+        nombreCli as customer_name,
+        apellidosCli as customer_lastname,
+        COUNT(*) as total_purchases,
+        SUM(total) as total_spent,
+        AVG(total) as avg_purchase,
+        MIN(fechaCom) as first_purchase,
+        MAX(fechaCom) as last_purchase
+      FROM historical_sales
+      WHERE 1=1 ${dateFilter}
+      GROUP BY nombreCli, apellidosCli
+      ORDER BY total_spent DESC
+      LIMIT 10
+    `;
+    
+    // Productos más vendidos
+    const topProductsQuery = `
+      SELECT 
+        nombreArt as product_name,
+        COUNT(*) as times_sold,
+        SUM(cantidad) as total_quantity,
+        SUM(total) as total_revenue,
+        AVG(precio) as avg_price
+      FROM historical_sales
+      WHERE 1=1 ${dateFilter}
+      GROUP BY nombreArt
+      ORDER BY total_revenue DESC
+      LIMIT 10
+    `;
+    
+    const [salesData, paymentsData, topCustomers, topProducts] = await Promise.all([
+      sequelize.query(historicalSalesQuery, { replacements, type: sequelize.QueryTypes.SELECT }),
+      sequelize.query(historicalPaymentsQuery, { replacements, type: sequelize.QueryTypes.SELECT }),
+      sequelize.query(topCustomersQuery, { replacements, type: sequelize.QueryTypes.SELECT }),
+      sequelize.query(topProductsQuery, { replacements, type: sequelize.QueryTypes.SELECT })
+    ]);
+    
+    // Calcular totales generales
+    const totalSales = salesData.reduce((sum, item) => sum + parseFloat(item.total_sales || 0), 0);
+    const totalPayments = paymentsData.reduce((sum, item) => sum + parseFloat(item.total_collected || 0), 0);
+    
+    res.json({
+      summary: {
+        totalSales,
+        totalPayments,
+        netBalance: totalSales - totalPayments,
+        periodLabel: year && month ? `${month}/${year}` : year ? `Año ${year}` : 'Datos Históricos Completos'
+      },
+      salesByPeriod: salesData.map(item => ({
+        ...item,
+        total_sales: parseFloat(item.total_sales || 0),
+        avg_sale: parseFloat(item.avg_sale || 0)
+      })),
+      paymentsByPeriod: paymentsData.map(item => ({
+        ...item,
+        total_collected: parseFloat(item.total_collected || 0),
+        avg_payment: parseFloat(item.avg_payment || 0)
+      })),
+      topCustomers: topCustomers.map(item => ({
+        ...item,
+        total_spent: parseFloat(item.total_spent || 0),
+        avg_purchase: parseFloat(item.avg_purchase || 0)
+      })),
+      topProducts: topProducts.map(item => ({
+        ...item,
+        total_revenue: parseFloat(item.total_revenue || 0),
+        avg_price: parseFloat(item.avg_price || 0)
+      }))
+    });
+  } catch (error) {
+    console.error('Error in getHistoricalAnalytics:', error);
     res.status(500).json({ error: error.message });
   }
 };
