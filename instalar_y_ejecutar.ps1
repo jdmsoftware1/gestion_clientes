@@ -18,6 +18,75 @@ function Test-CommandExists {
     }
 }
 
+# Función para actualizar el repositorio
+function Update-Repository {
+    Write-Host "`n🔄 Verificando actualizaciones del repositorio..." -ForegroundColor Cyan
+
+    # Verificar si es un repositorio git
+    if (-not (Test-Path "$PSScriptRoot\.git")) {
+        Write-Host "⚠️ No es un repositorio git. Saltando actualización." -ForegroundColor Yellow
+        return
+    }
+
+    # Verificar si git está disponible
+    if (-not (Test-CommandExists git)) {
+        Write-Host "⚠️ Git no está instalado. Saltando actualización." -ForegroundColor Yellow
+        return
+    }
+
+    try {
+        # Obtener el estado actual
+        $currentBranch = git branch --show-current
+        Write-Host "Rama actual: $currentBranch" -ForegroundColor Gray
+
+        # Hacer fetch para obtener los últimos cambios
+        Write-Host "Descargando últimas actualizaciones..." -ForegroundColor Gray
+        git fetch origin --quiet
+
+        # Verificar si hay cambios en origin/main
+        $localCommit = git rev-parse HEAD
+        $remoteCommit = git rev-parse origin/main 2>$null
+
+        if ($LASTEXITCODE -eq 0 -and $localCommit -ne $remoteCommit) {
+            Write-Host "📦 Hay actualizaciones disponibles. Aplicando..." -ForegroundColor Yellow
+
+            # Verificar si hay cambios locales no commiteados
+            $status = git status --porcelain
+            if ($status) {
+                Write-Host "⚠️ Hay cambios locales no guardados. Creando backup..." -ForegroundColor Yellow
+                Write-Host "Guardando cambios locales..." -ForegroundColor Gray
+                git stash push -m "Auto-backup before update $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" --quiet
+                $stashed = $true
+            }
+
+            # Actualizar a la última versión de main
+            git reset --hard origin/main --quiet
+            git clean -fd --quiet
+
+            Write-Host "✅ Repositorio actualizado correctamente" -ForegroundColor Green
+
+            if ($stashed) {
+                Write-Host "💡 Tus cambios locales fueron guardados. Puedes recuperarlos con 'git stash pop'" -ForegroundColor Cyan
+            }
+
+            # Reiniciar el script con la nueva versión
+            Write-Host "`n🔄 Reiniciando script con la nueva versión..." -ForegroundColor Yellow
+            Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File `"$PSCommandPath`"" -NoNewWindow
+            exit 0
+
+        } else {
+            Write-Host "✅ El repositorio ya está actualizado" -ForegroundColor Green
+        }
+
+    } catch {
+        Write-Host "⚠️ Error verificando actualizaciones: $_" -ForegroundColor Yellow
+        Write-Host "Continuando con la versión actual..." -ForegroundColor Gray
+    }
+}
+
+# Ejecutar actualización del repositorio
+Update-Repository
+
 # 1. Verificar e instalar Node.js
 Write-Host "`n📦 Verificando Node.js..." -ForegroundColor Cyan
 if (Test-CommandExists node) {

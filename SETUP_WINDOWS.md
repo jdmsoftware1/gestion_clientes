@@ -1,85 +1,52 @@
-# 🪟 Setup en Windows (PowerShell)
+# 🪟 Setup Automático en Windows
 
-Guía paso a paso para Windows usando PowerShell.
+## 🚀 Instalación en 1 Solo Paso
 
-## Requisitos
-
-- Node.js LTS (https://nodejs.org/) - incluye npm
-- PostgreSQL (https://www.postgresql.org/download/windows/) o Neon Cloud
-- Git (opcional, pero recomendado)
-
-## ✅ Verificar Instalación
+Ya no necesitas seguir guías complejas. Solo ejecuta este comando:
 
 ```powershell
-# Abrir PowerShell como Administrador
-node --version    # Debe mostrar v16+
-npm --version     # Debe mostrar v7+
-psql --version    # Si instalaste PostgreSQL local
+# Abrir PowerShell como Administrador y ejecutar:
+.\instalar_y_ejecutar.ps1
 ```
 
-## 📦 Opción 1: PostgreSQL Local
+### ✨ Lo que hace automáticamente:
 
-### 1️⃣ Crear Base de Datos
-
-```powershell
-# Conectar a PostgreSQL (te pedirá contraseña de superuser)
-psql -U postgres
-
-# En la consola psql, ejecutar:
-CREATE DATABASE gestion_clientes;
-CREATE USER appuser WITH PASSWORD 'tu_contraseña';
-ALTER ROLE appuser SET client_encoding TO 'utf8';
-ALTER ROLE appuser SET default_transaction_isolation TO 'read committed';
-GRANT ALL PRIVILEGES ON DATABASE gestion_clientes TO appuser;
-\q
-```
-
-### 2️⃣ Configurar Backend
-
-```powershell
-cd backend
-copy .env.example .env
-```
-
-Editar `.env` con Notepad++/VS Code:
-
-```env
-DATABASE_URL=postgresql://appuser:tu_contraseña@localhost:5432/gestion_clientes
-NODE_ENV=development
-PORT=5000
-CORS_ORIGIN=http://localhost:5173
-```
-
-### 3️⃣ Instalar y Ejecutar
-
-```powershell
-npm install
-npm run dev
-```
-
-✅ Backend listo en `http://localhost:5000`
+- ✅ **Instala Node.js** si no está presente
+- ✅ **Instala todas las dependencias** del backend y frontend
+- ✅ **Configura la base de datos** (Neon recomendado)
+- ✅ **Inicia el backend** (`npm start`)
+- ✅ **Inicia el frontend** (`npm run dev`)
+- ✅ **Se auto-actualiza** si hay nuevas versiones
+- ✅ **Espera confirmación** de que ambos servicios están listos
 
 ---
 
-## ☁️ Opción 2: Neon Cloud (Recomendado)
+## 📋 Requisitos Mínimos
 
-Más fácil, sin instalar PostgreSQL.
+- Windows 10/11
+- Conexión a internet
+- **Cuenta en Neon** (PostgreSQL en la nube) - https://neon.tech
 
-### 1️⃣ Crear Proyecto en Neon
+### 🔧 Requisitos Automáticos
 
-1. Ir a https://console.neon.tech/
-2. Sign up (usa GitHub)
-3. Crear nuevo proyecto
-4. Copiar connection string
+- Node.js se instala automáticamente si no existe
+- npm se instala con Node.js
+- Base de datos en Neon (configurar manualmente)
 
-### 2️⃣ Configurar Backend
+---
 
-```powershell
-cd backend
-copy .env.example .env
-```
+## ☁️ Configuración de Base de Datos
 
-Editar `.env`:
+### 1. Crear cuenta en Neon
+
+1. Ve a: https://console.neon.tech/
+2. Regístrate (usa GitHub para hacerlo rápido)
+3. Crea un nuevo proyecto
+4. Copia el connection string
+
+### 2. Configurar credenciales
+
+Edita `backend/.env` con tus credenciales de Neon:
 
 ```env
 DATABASE_URL=postgresql://usuario:password@ep-xxxx.neon.tech/gestion_clientes?sslmode=require
@@ -88,229 +55,186 @@ PORT=5000
 CORS_ORIGIN=http://localhost:5173
 ```
 
-### 3️⃣ Instalar y Ejecutar
+---
 
-```powershell
-npm install
-npm run dev
-```
+## 🎯 Primer Uso - Pasos Rápidos
+
+1. **Ejecutar instalación automática:**
+   ```powershell
+   .\instalar_y_ejecutar.ps1
+   ```
+
+2. **Configurar Neon** (primera vez):
+   - Crear cuenta en https://neon.tech
+   - Copiar DATABASE_URL a `backend/.env`
+
+3. **¡Listo!** Aplicación corriendo en:
+   - 🌐 Frontend: http://localhost:5173
+   - 🔧 Backend: http://localhost:5000
 
 ---
 
-## 🎨 Frontend Setup
+## 📊 Funcionalidades Disponibles
 
-```powershell
-# En otra ventana PowerShell
-cd frontend
-copy .env.example .env
-npm install
-npm run dev
-```
+### Dashboard Principal
+- 📈 **KPIs en tiempo real**: Deuda total, ventas y pagos por período
+- 👥 **Ranking de vendedores** por total vendido
+- 👤 **Clientes morosos** (sin pagos >60 días)
+- 🎯 **Oportunidades de venta** (deuda <50€)
 
-✅ Frontend en `http://localhost:5173`
+### Gestión Completa
+- 🏪 **CRUD completo** para Vendedores, Clientes, Ventas y Pagos
+- 💰 **Sistema de cuenta corriente** (deuda calculada automáticamente)
+- 📅 **Cierres de mes personalizados** con nombres descriptivos
+- 📊 **Analytics históricos** (datos desde 2021 hasta 2024)
 
----
-
-## 🖱️ Primera Vez: Pasos Rápidos
-
-1. **Abre 2 ventanas PowerShell**
-
-```powershell
-# Ventana 1: Backend
-cd backend
-npm run dev
-
-# Ventana 2: Frontend
-cd frontend
-npm run dev
-```
-
-2. **Abre navegador**: http://localhost:5173
-
-3. **Crea un Vendedor**:
-   - Menú ≡ > Vendedores > "Nuevo Vendedor"
-   - Nombre: "Carlos García"
-   - Email: carlos@example.com
-
-4. **Crea un Cliente**:
-   - Menú > Clientes > "Nuevo Cliente"
-   - Nombre: "Juan Pérez"
-   - Teléfono: 123456789
-   - Vendedor: "Carlos García"
-
-5. **Crea una Venta**:
-   - Menú > Ventas > "Nueva Venta"
-   - Cliente: "Juan Pérez"
-   - Monto: 500
-   - Descripción: "Venta de productos"
-
-6. **Ver Dashboard**: Menú > Dashboard
-   - Verás la deuda de 500€
-
-7. **Crea un Pago**:
-   - Menú > Pagos > "Nuevo Pago"
-   - Cliente: "Juan Pérez"
-   - Monto: 200
-   - Método: "Efectivo"
-
-8. **Revisar Dashboard**: Deuda ahora será 300€
+### Analytics Históricos
+- 📅 **Filtros por año** (2021-2024)
+- 📊 **Ventas y pagos por período**
+- 🏆 **Top clientes y productos**
+- 📈 **Tendencias históricas**
 
 ---
 
-## 📊 Importar Datos de Prueba
+## 🆘 Solución de Problemas
 
-### Opción A: Archivo CSV
-
+### ❌ "Node.js no se instala"
 ```powershell
-# Desde raíz del proyecto
-cat sample-data.csv   # Ver contenido
+# Instalar manualmente desde:
+# https://nodejs.org/
+# Luego reiniciar PowerShell y ejecutar el script nuevamente
 ```
 
-1. Abre: http://localhost:5173/import
-2. Selecciona: `sample-data.csv`
-3. Click: "Importar"
-4. ✅ Verás 5 clientes importados
-
-### Opción B: Manual (sin CSV)
-
-Ya lo hiciste arriba en "Primera Vez".
-
----
-
-## 🐛 Troubleshooting en Windows
-
-### ❌ "Cannot find module"
-
+### ❌ "Neon no conecta"
 ```powershell
-# En backend o frontend
-rm -r node_modules
-npm install
-npm run dev
+# Verificar backend/.env
+# DATABASE_URL debe tener el formato correcto
+# Ejemplo: postgresql://user:pass@ep-xxxx.neon.tech/dbname?sslmode=require
 ```
 
-### ❌ "Port 5000 already in use"
-
+### ❌ "Puertos ocupados"
 ```powershell
-# Ver qué proceso usa puerto 5000
+# Ver qué usa los puertos
 netstat -ano | findstr :5000
+netstat -ano | findstr :5173
 
-# Matar proceso (si PID es 1234)
-Stop-Process -Id 1234 -Force
-
-# O cambiar puerto en backend
-$env:PORT=5001; npm run dev
+# Matar proceso si es necesario
+Stop-Process -Id <PID> -Force
 ```
 
-### ❌ "PostgreSQL connection refused"
-
+### ❌ "Error de permisos"
 ```powershell
-# Verificar que PostgreSQL está corriendo
-Get-Service postgresql-x64-*
-
-# Si no, iniciarlo:
-Start-Service postgresql-x64-15  # (o tu versión)
-
-# O conectar a Neon en lugar de local
+# Ejecutar PowerShell como Administrador
+# O cambiar política de ejecución:
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
-
-### ❌ "EACCES permission denied"
-
-Ejecutar PowerShell como **Administrador**.
-
-### ❌ "Cannot find npm"
-
-Reiniciar PowerShell después de instalar Node.js.
 
 ---
 
-## 🎯 Comandos Útiles en Windows
+## 🔄 Auto-Actualización
+
+El script se **actualiza automáticamente** cuando hay nuevas versiones:
+
+- 📦 **Detecta cambios** en el repositorio
+- 💾 **Hace backup** de cambios locales
+- 🔄 **Actualiza código** a última versión
+- 🔁 **Se reinicia** automáticamente
+
+### Recuperar cambios locales:
+```powershell
+git stash pop  # Si el script hizo backup de tus cambios
+```
+
+---
+
+## 🎨 Desarrollo Avanzado
+
+### Ejecutar individualmente:
+
+```powershell
+# Solo backend
+cd backend
+npm start
+
+# Solo frontend (en otra terminal)
+cd frontend
+npm run dev
+```
+
+### Comandos útiles:
 
 ```powershell
 # Backend
-cd backend
-npm run dev        # Desarrollo
-npm start          # Producción
-npm run migrate    # Sincronizar BD
+npm run dev     # Desarrollo con auto-reload
+npm start       # Producción
+npm run migrate # Sincronizar base de datos
 
 # Frontend
-cd frontend
-npm run dev        # Desarrollo
-npm run build      # Compilar
-npm run preview    # Ver build
-
-# General
-Get-ChildItem              # Ver archivos (ls)
-Remove-Item -Recurse node_modules  # Borrar carpeta
-Copy-Item file.txt file2.txt       # Copiar
+npm run dev     # Desarrollo con Vite
+npm run build   # Compilar para producción
+npm run preview # Ver build localmente
 ```
 
 ---
 
-## 📁 Estructura de Carpetas (Windows)
+## 📁 Estructura del Proyecto
 
 ```
-C:\Users\TuUsuario\...
-└── gestion_clientes
-    ├── backend
-    ├── frontend
-    ├── README.md
-    ├── QUICK_START.md
-    └── DEPLOYMENT.md
+gestion_clientes/
+├── backend/                    # API Node.js + Express
+│   ├── controllers/           # Lógica de negocio
+│   ├── models/               # Modelos Sequelize
+│   ├── routes/               # Endpoints API
+│   ├── scripts/              # Scripts de migración
+│   ├── .env                  # ⚠️ Configurar con tus credenciales
+│   └── server.js             # Servidor principal
+├── frontend/                  # React + Vite + Material-UI
+│   ├── src/
+│   │   ├── components/       # Componentes reutilizables
+│   │   ├── pages/           # Páginas principales
+│   │   ├── api/             # Servicios API
+│   │   └── context/         # Context providers
+│   └── package.json
+├── instalar_y_ejecutar.ps1   # 🚀 Script de instalación automática
+└── README.md                 # Documentación principal
 ```
 
 ---
 
-## 🔑 Archivos Importantes
+## 🚀 Producción (Opcional)
 
+### Backend con PM2:
+```powershell
+npm install -g pm2
+cd backend
+pm2 start server.js --name "gestion-backend"
+pm2 startup
+pm2 save
 ```
-backend/.env           ← Editar con tus credenciales DB
-frontend/.env          ← URL del backend
-sample-data.csv        ← Datos de prueba para importar
-```
 
----
-
-## 🚀 Producción en Windows (Advanced)
-
-### Compilar Frontend
-
+### Frontend:
 ```powershell
 cd frontend
 npm run build
-# Genera carpeta 'dist' lista para servidor
-```
-
-### Usar PM2 para Backend (Production)
-
-```powershell
-# Instalar PM2 globalmente
-npm install -g pm2
-
-# En carpeta backend
-pm2 start server.js --name "gestion-backend"
-
-# Autostart en reboots
-pm2 startup
-pm2 save
-
-# Ver logs
-pm2 logs gestion-backend
+# Subir carpeta 'dist' a tu servidor web
 ```
 
 ---
 
-## 📞 Soporte Rápido
+## 📞 Contacto y Soporte
 
 | Problema | Solución |
 |----------|----------|
-| No carga dashboard | Verifica backend está corriendo |
-| CORS error | Verifica `CORS_ORIGIN` en .env |
-| No importa CSV | Formato debe ser: nombre,teléfono,email,vendedor,deuda |
-| Puerto ocupado | Cambia puerto en .env o mata proceso |
-| BD no conecta | Verifica `DATABASE_URL` y que PostgreSQL está corriendo |
+| No carga dashboard | Verificar que backend está corriendo en puerto 5000 |
+| CORS error | Verificar `CORS_ORIGIN=http://localhost:5173` en .env |
+| BD no conecta | Verificar DATABASE_URL en Neon console |
+| Puerto ocupado | Cambiar PORT en .env o liberar puerto |
+| Analytics no muestra datos 2024 | Los datos se agregan automáticamente en la instalación |
 
 ---
 
-**Versión**: 1.0.0
-**Sistema Operativo**: Windows 10+
-**Shell**: PowerShell 5.0+
+**Versión**: 2.1.0
+**Sistema**: Windows 10/11 con PowerShell
+**Instalación**: 100% Automática
+**Base de datos**: Neon Cloud (PostgreSQL)
+**Última actualización**: Octubre 2025
