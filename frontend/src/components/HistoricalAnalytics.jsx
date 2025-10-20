@@ -71,6 +71,9 @@ const HistoricalAnalytics = () => {
         const selectedSalespersonData = salespeople.find(s => s.id === selectedSalesperson);
         if (selectedSalespersonData && selectedSalespersonData.legacyCode) {
           params.salespersonId = selectedSalespersonData.legacyCode.toString();
+          console.log('Frontend - Selected salesperson:', selectedSalespersonData.name, 'with legacy code:', selectedSalespersonData.legacyCode);
+        } else {
+          console.warn('Frontend - No legacy code found for salesperson:', selectedSalespersonData);
         }
       }
       
@@ -90,11 +93,34 @@ const HistoricalAnalytics = () => {
   const fetchSalespeople = async () => {
     try {
       const response = await salespeopleAPI.getAll();
-      // Asignar códigos numéricos temporales para el filtro histórico
-      const salespeopleWithCodes = response.data.map((salesperson, index) => ({
-        ...salesperson,
-        legacyCode: index + 1 // Código temporal: 1, 2, 3, etc.
-      }));
+      // Asignar códigos legacy basados en nombres para compatibilidad con datos históricos
+      const salespeopleWithCodes = response.data.map((salesperson) => {
+        let legacyCode = null;
+        
+        // Mapeo de nombres a códigos legacy históricos
+        const nameToCodeMap = {
+          'BegoJi': 6,
+          'Bego': 3,
+          'David': 1,
+          'Yaiza': 5,
+          'fe': 1,
+          'Jimenez': 4
+        };
+        
+        // Buscar por nombre exacto o parcial
+        for (const [name, code] of Object.entries(nameToCodeMap)) {
+          if (salesperson.name.toLowerCase().includes(name.toLowerCase())) {
+            legacyCode = code;
+            break;
+          }
+        }
+        
+        return {
+          ...salesperson,
+          legacyCode: legacyCode
+        };
+      });
+      
       setSalespeople([{ id: 'TODOS', name: 'Todos los vendedores', legacyCode: null }, ...salespeopleWithCodes]);
     } catch (error) {
       console.error('Error fetching salespeople:', error);

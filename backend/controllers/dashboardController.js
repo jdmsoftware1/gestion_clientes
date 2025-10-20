@@ -274,6 +274,7 @@ export const getSalesOpportunities = async (req, res) => {
 
 // Get historical analytics (pre-October 2025)
 export const getHistoricalAnalytics = async (req, res) => {
+  console.log('Backend - getHistoricalAnalytics called with params:', req.query);
   try {
     const { year, month, salespersonId } = req.query;
     
