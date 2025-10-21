@@ -26,6 +26,7 @@ import AddIcon from '@mui/icons-material/Add';
 import DownloadIcon from '@mui/icons-material/Download';
 import { paymentsAPI, clientsAPI } from '../api/services';
 import { useSalesperson } from '../context/SalespersonContext';
+import { exportPaymentsToCSV } from '../utils/csvExport';
 
 const Payments = () => {
   const { selectedSalesperson } = useSalesperson();
@@ -144,13 +145,23 @@ const Payments = () => {
             </Typography>
           )}
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
-        >
-          Nuevo Pago
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            onClick={() => exportPaymentsToCSV(payments)}
+            disabled={payments.length === 0}
+          >
+            Exportar CSV
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => handleOpenDialog()}
+          >
+            Nuevo Pago
+          </Button>
+        </Box>
       </Box>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}

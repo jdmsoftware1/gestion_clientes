@@ -51,6 +51,8 @@ const Analytics = () => {
   const [period, setPeriod] = useState('daily');
   const [activeTab, setActiveTab] = useState(0);
   const [demoMode, setDemoMode] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   
   // Estados para datos
   const [loading, setLoading] = useState(false);
@@ -59,8 +61,56 @@ const Analytics = () => {
   const [trendData, setTrendData] = useState(null);
   const [comparisonData, setComparisonData] = useState([]);
   const [isDataDemo, setIsDataDemo] = useState(false);
+  const [monthlyData, setMonthlyData] = useState([]);
 
-  // Cargar datos
+  // Cargar datos mensuales por vendedor
+  const fetchMonthlyData = async () => {
+    try {
+      const params = {
+        year: selectedYear,
+        month: selectedMonth,
+        demoMode: demoMode.toString(),
+        ...(selectedSalesperson?.id !== 'TODOS' ? { salespersonId: selectedSalesperson.id } : {})
+      };
+
+      // Aquí iría la llamada a una nueva API endpoint para datos mensuales
+      // Por ahora, usaremos datos simulados
+      const mockMonthlyData = [
+        {
+          salesperson_name: 'Juan Pérez',
+          total_sales: 25,
+          total_sales_amount: 12500.50,
+          total_payments: 20,
+          total_payments_amount: 8750.25,
+          pending_debt: 3750.25,
+          active_clients: 15
+        },
+        {
+          salesperson_name: 'María García',
+          total_sales: 32,
+          total_sales_amount: 18750.75,
+          total_payments: 28,
+          total_payments_amount: 15200.00,
+          pending_debt: 3550.75,
+          active_clients: 22
+        },
+        {
+          salesperson_name: 'Carlos López',
+          total_sales: 18,
+          total_sales_amount: 9200.00,
+          total_payments: 16,
+          total_payments_amount: 7800.50,
+          pending_debt: 1399.50,
+          active_clients: 12
+        }
+      ];
+
+      setMonthlyData(mockMonthlyData);
+    } catch (error) {
+      console.error('Error fetching monthly data:', error);
+      setMonthlyData([]);
+    }
+  };
   const fetchAnalyticsData = async () => {
     try {
       setLoading(true);
