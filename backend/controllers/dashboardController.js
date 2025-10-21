@@ -9,17 +9,20 @@ export const getDashboardKPIs = async (req, res) => {
     // Construir filtros de fecha
     let dateFilter = '';
     let dateFilterPayments = '';
+    let dateFilterReturns = '';
     const replacements = {};
     
     if (dateFrom && dateTo) {
       dateFilter = 'AND s.created_at >= :dateFrom AND s.created_at <= :dateToEnd';
       dateFilterPayments = 'AND p.created_at >= :dateFrom AND p.created_at <= :dateToEnd';
+      dateFilterReturns = 'AND r.created_at >= :dateFrom AND r.created_at <= :dateToEnd';
       replacements.dateFrom = dateFrom;
       replacements.dateToEnd = dateTo + ' 23:59:59';
     } else {
       // Por defecto últimos 30 días
       dateFilter = 'AND s.created_at >= NOW() - INTERVAL \'30 days\'';
       dateFilterPayments = 'AND p.created_at >= NOW() - INTERVAL \'30 days\'';
+      dateFilterReturns = 'AND r.created_at >= NOW() - INTERVAL \'30 days\'';
     }
     
     // Filtro de vendedor
@@ -29,15 +32,12 @@ export const getDashboardKPIs = async (req, res) => {
       replacements.salespersonId = salespersonId;
     }
 
-    // Deuda total (sin filtro de fecha)
+    // Deuda total (sin filtro de fecha) - incluir devoluciones
     const totalDebtQuery = `
-      SELECT 
-        COALESCE(SUM(s.amount), 0) as total_sales,
-        COALESCE(SUM(p.amount), 0) as total_payments
-      FROM clients c
-      LEFT JOIN sales s ON c.id = s.client_id
-      LEFT JOIN payments p ON c.id = p.client_id
-      WHERE 1=1 ${salespersonFilter.replace('AND', 'AND')}
+      SELECT
+        (SELECT COALESCE(SUM(s.amount), 0) FROM sales s ${salespersonFilter ? 'JOIN clients c ON s.client_id = c.id' : ''} WHERE 1=1 ${salespersonFilter ? salespersonFilter.replace('c.salesperson_id', 'c.salesperson_id') : ''}) as total_sales,
+        (SELECT COALESCE(SUM(p.amount), 0) FROM payments p ${salespersonFilter ? 'JOIN clients c2 ON p.client_id = c2.id' : ''} WHERE 1=1 ${salespersonFilter ? salespersonFilter.replace('c.salesperson_id', 'c2.salesperson_id') : ''}) as total_payments,
+        (SELECT COALESCE(SUM(r.amount), 0) FROM returns r ${salespersonFilter ? 'JOIN clients c3 ON r.client_id = c3.id' : ''} WHERE 1=1 ${salespersonFilter ? salespersonFilter.replace('c.salesperson_id', 'c3.salesperson_id') : ''}) as total_returns
     `;
 
     // Ventas del período
@@ -56,22 +56,34 @@ export const getDashboardKPIs = async (req, res) => {
       WHERE 1=1 ${dateFilterPayments} ${salespersonFilter}
     `;
 
-    const [totalDebtResult, periodSalesResult, periodPaymentsResult] = await Promise.all([
+    // Devoluciones del período
+    const periodReturnsQuery = `
+      SELECT COALESCE(SUM(r.amount), 0) as total_returns
+      FROM returns r
+      LEFT JOIN clients c ON r.client_id = c.id
+      WHERE 1=1 ${dateFilterReturns} ${salespersonFilter}
+    `;
+
+    const [totalDebtResult, periodSalesResult, periodPaymentsResult, periodReturnsResult] = await Promise.all([
       sequelize.query(totalDebtQuery, { replacements, type: sequelize.QueryTypes.SELECT }),
       sequelize.query(periodSalesQuery, { replacements, type: sequelize.QueryTypes.SELECT }),
-      sequelize.query(periodPaymentsQuery, { replacements, type: sequelize.QueryTypes.SELECT })
+      sequelize.query(periodPaymentsQuery, { replacements, type: sequelize.QueryTypes.SELECT }),
+      sequelize.query(periodReturnsQuery, { replacements, type: sequelize.QueryTypes.SELECT })
     ]);
 
     const totalSales = parseFloat(totalDebtResult[0]?.total_sales) || 0;
     const totalPayments = parseFloat(totalDebtResult[0]?.total_payments) || 0;
-    const totalDebt = totalSales - totalPayments;
+    const totalReturns = parseFloat(totalDebtResult[0]?.total_returns) || 0;
+    const totalDebt = totalSales - totalPayments - totalReturns;
     const periodSales = parseFloat(periodSalesResult[0]?.total_sales) || 0;
     const periodPayments = parseFloat(periodPaymentsResult[0]?.total_payments) || 0;
+    const periodReturns = parseFloat(periodReturnsResult[0]?.total_returns) || 0;
 
     res.json({
       totalDebt,
       totalSalesLast30Days: periodSales,
       totalPaymentsLast30Days: periodPayments,
+      totalReturnsLast30Days: periodReturns,
       periodLabel: dateFrom && dateTo ? `${dateFrom} al ${dateTo}` : 'Últimos 30 días'
     });
   } catch (error) {
@@ -191,12 +203,13 @@ export const getDelinquentClients = async (req, res) => {
       c.email,
       c.salesperson_id,
       sp.name as salesperson_name,
-      COALESCE(SUM(s.amount), 0) - COALESCE(SUM(p.amount), 0) as debt,
+      COALESCE(SUM(s.amount), 0) - COALESCE(SUM(p.amount), 0) - COALESCE(SUM(r.amount), 0) as debt,
       MAX(p.created_at) as last_payment_date
     FROM clients c
     LEFT JOIN salespeople sp ON c.salesperson_id = sp.id
     LEFT JOIN sales s ON c.id = s.client_id
-    LEFT JOIN payments p ON c.id = p.client_id`;
+    LEFT JOIN payments p ON c.id = p.client_id
+    LEFT JOIN returns r ON c.id = r.client_id`;
 
     // Filtro de vendedor
     if (salespersonId && salespersonId !== 'TODOS') {
@@ -205,7 +218,7 @@ export const getDelinquentClients = async (req, res) => {
     }
 
     query += ` GROUP BY c.id, c.name, c.phone, c.email, c.salesperson_id, sp.id, sp.name
-    HAVING (COALESCE(SUM(s.amount), 0) - COALESCE(SUM(p.amount), 0) > 0)
+    HAVING (COALESCE(SUM(s.amount), 0) - COALESCE(SUM(p.amount), 0) - COALESCE(SUM(r.amount), 0) > 0)
       ${paymentDateFilter}
     ORDER BY debt DESC
     LIMIT 10`;
@@ -238,11 +251,12 @@ export const getSalesOpportunities = async (req, res) => {
       c.email,
       c.salesperson_id,
       sp.name as salesperson_name,
-      COALESCE(SUM(s.amount), 0) - COALESCE(SUM(p.amount), 0) as debt
+      COALESCE(SUM(s.amount), 0) - COALESCE(SUM(p.amount), 0) - COALESCE(SUM(r.amount), 0) as debt
     FROM clients c
     LEFT JOIN salespeople sp ON c.salesperson_id = sp.id
     LEFT JOIN sales s ON c.id = s.client_id
-    LEFT JOIN payments p ON c.id = p.client_id`;
+    LEFT JOIN payments p ON c.id = p.client_id
+    LEFT JOIN returns r ON c.id = r.client_id`;
 
     const replacements = {};
 
@@ -252,7 +266,7 @@ export const getSalesOpportunities = async (req, res) => {
     }
 
     query += ` GROUP BY c.id, c.name, c.phone, c.email, c.salesperson_id, sp.id, sp.name
-    HAVING (COALESCE(SUM(s.amount), 0) - COALESCE(SUM(p.amount), 0) < 75)
+    HAVING (COALESCE(SUM(s.amount), 0) - COALESCE(SUM(p.amount), 0) - COALESCE(SUM(r.amount), 0) < 75)
     ORDER BY debt ASC`;
 
     const opportunities = await sequelize.query(query, {

@@ -1,0 +1,12 @@
+{
+  "status": 200,
+  "data": {
+    "totalDebt": 20069.11,
+    "totalSalesLast30Days": 100,
+    "totalPaymentsLast30Days": 70,
+    "totalReturnsLast30Days": 10,
+    "periodLabel": "2025-09-21 al 2025-10-21"
+  },
+  "timestamp": "2025-10-21T11:05:19.554Z",
+  "url": "http://localhost:5000/api/dashboard/kpis?salespersonId=579588ae-1fd0-4d7d-8227-8c89490d72c9&dateFrom=2025-09-21&dateTo=2025-10-21"
+}
