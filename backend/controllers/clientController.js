@@ -1,4 +1,4 @@
-import { Client, Salesperson, Sale, Payment } from '../models/index.js';
+import { Client, Salesperson, Sale, Payment, Return } from '../models/index.js';
 import sequelize from '../config/database.js';
 import { Op } from 'sequelize';
 
@@ -171,6 +171,30 @@ export const deleteClient = async (req, res) => {
       return res.status(404).json({ error: 'Client not found' });
     }
 
+    // Verificar si el cliente tiene ventas asociadas
+    const salesCount = await Sale.count({ where: { clientId: id } });
+    if (salesCount > 0) {
+      return res.status(400).json({
+        error: 'No se puede eliminar el cliente porque tiene ventas registradas. Elimine primero todas las ventas, pagos y devoluciones asociadas.'
+      });
+    }
+
+    // Verificar si el cliente tiene pagos asociados
+    const paymentsCount = await Payment.count({ where: { clientId: id } });
+    if (paymentsCount > 0) {
+      return res.status(400).json({
+        error: 'No se puede eliminar el cliente porque tiene pagos registrados. Elimine primero todas las ventas, pagos y devoluciones asociadas.'
+      });
+    }
+
+    // Verificar si el cliente tiene devoluciones asociadas
+    const returnsCount = await Return.count({ where: { clientId: id } });
+    if (returnsCount > 0) {
+      return res.status(400).json({
+        error: 'No se puede eliminar el cliente porque tiene devoluciones registradas. Elimine primero todas las ventas, pagos y devoluciones asociadas.'
+      });
+    }
+
     await client.destroy();
     res.json({ message: 'Client deleted' });
   } catch (error) {
@@ -200,10 +224,22 @@ export async function calculateClientDebt(clientId) {
     { replacements: [clientId], type: sequelize.QueryTypes.SELECT }
   );
 
+  // Calcular total de devoluciones
+  const returnsResult = await sequelize.query(
+    `
+    SELECT COALESCE(SUM(amount), 0) as total_returns
+    FROM returns
+    WHERE client_id = ?
+    `,
+    { replacements: [clientId], type: sequelize.QueryTypes.SELECT }
+  );
+
   const totalSales = parseFloat(salesResult[0]?.total_sales) || 0;
   const totalPayments = parseFloat(paymentsResult[0]?.total_payments) || 0;
+  const totalReturns = parseFloat(returnsResult[0]?.total_returns) || 0;
 
-  return totalSales - totalPayments;
+  // Deuda = Ventas - Pagos - Devoluciones
+  return totalSales - totalPayments - totalReturns;
 }
 
 // Helper function to get last payment month
