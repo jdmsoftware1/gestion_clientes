@@ -833,6 +833,127 @@ export const getSalesPrediction = async (req, res) => {
   }
 };
 
+// Obtener datos mensuales por vendedor para vista Excel-like
+export const getMonthlyData = async (req, res) => {
+  try {
+    const { year, month, salespersonId, demoMode = 'false' } = req.query;
+    console.log('🔧 getMonthlyData called with params:', req.query);
+
+    // Si está en modo demo, devolver datos simulados
+    if (demoMode === 'true') {
+      console.log('🎭 Demo mode activated - returning simulated monthly data');
+
+      const mockMonthlyData = [
+        {
+          salesperson_name: 'Juan Pérez',
+          total_sales: 25,
+          total_sales_amount: 12500.50,
+          total_payments: 20,
+          total_payments_amount: 8750.25,
+          pending_debt: 3750.25,
+          active_clients: 15
+        },
+        {
+          salesperson_name: 'María García',
+          total_sales: 32,
+          total_sales_amount: 18750.75,
+          total_payments: 28,
+          total_payments_amount: 15200.00,
+          pending_debt: 3550.75,
+          active_clients: 22
+        },
+        {
+          salesperson_name: 'Carlos López',
+          total_sales: 18,
+          total_sales_amount: 9200.00,
+          total_payments: 16,
+          total_payments_amount: 7800.50,
+          pending_debt: 1399.50,
+          active_clients: 12
+        }
+      ];
+
+      return res.json(mockMonthlyData);
+    }
+
+    // MODO REAL: Usar datos de la base de datos
+    console.log('📊 Real mode activated - querying database for monthly data');
+
+    try {
+      const monthlyQuery = `
+        SELECT
+          sp.name as salesperson_name,
+          COALESCE(sales_data.total_sales, 0)::integer as total_sales,
+          COALESCE(sales_data.total_sales_amount, 0)::numeric as total_sales_amount,
+          COALESCE(payments_data.total_payments, 0)::integer as total_payments,
+          COALESCE(payments_data.total_payments_amount, 0)::numeric as total_payments_amount,
+          COALESCE(sales_data.total_sales_amount, 0)::numeric - COALESCE(payments_data.total_payments_amount, 0)::numeric as pending_debt,
+          COALESCE(client_data.active_clients, 0)::integer as active_clients
+        FROM salespeople sp
+        LEFT JOIN (
+          SELECT
+            c.salesperson_id,
+            COUNT(s.id)::integer as total_sales,
+            SUM(s.amount::numeric)::numeric as total_sales_amount
+          FROM sales s
+          JOIN clients c ON s.client_id = c.id
+          WHERE EXTRACT(YEAR FROM s.created_at) = $1
+            AND EXTRACT(MONTH FROM s.created_at) = $2
+            ${salespersonId && salespersonId !== 'TODOS' ? 'AND c.salesperson_id = $3' : ''}
+          GROUP BY c.salesperson_id
+        ) sales_data ON sp.id = sales_data.salesperson_id
+        LEFT JOIN (
+          SELECT
+            c.salesperson_id,
+            COUNT(p.id)::integer as total_payments,
+            SUM(p.amount::numeric)::numeric as total_payments_amount
+          FROM payments p
+          JOIN clients c ON p.client_id = c.id
+          WHERE EXTRACT(YEAR FROM p.created_at) = $1
+            AND EXTRACT(MONTH FROM p.created_at) = $2
+            ${salespersonId && salespersonId !== 'TODOS' ? 'AND c.salesperson_id = $4' : ''}
+          GROUP BY c.salesperson_id
+        ) payments_data ON sp.id = payments_data.salesperson_id
+        LEFT JOIN (
+          SELECT
+            salesperson_id,
+            COUNT(DISTINCT c.id)::integer as active_clients
+          FROM clients c
+          LEFT JOIN sales s ON c.id = s.client_id AND EXTRACT(YEAR FROM s.created_at) = $1 AND EXTRACT(MONTH FROM s.created_at) = $2
+          LEFT JOIN payments p ON c.id = p.client_id AND EXTRACT(YEAR FROM p.created_at) = $1 AND EXTRACT(MONTH FROM p.created_at) = $2
+          WHERE s.id IS NOT NULL OR p.id IS NOT NULL
+          GROUP BY salesperson_id
+        ) client_data ON sp.id = client_data.salesperson_id
+        ORDER BY sp.name
+      `;
+
+      const queryParams = [parseInt(year), parseInt(month)];
+      if (salespersonId && salespersonId !== 'TODOS') {
+        queryParams.push(salespersonId, salespersonId);
+      }
+
+      const monthlyData = await sequelize.query(monthlyQuery, {
+        bind: queryParams,
+        type: sequelize.QueryTypes.SELECT
+      });
+
+      console.log(`✅ Real monthly data: ${monthlyData.length} salespeople for ${year}-${month}`);
+
+      res.json(monthlyData);
+
+    } catch (dbError) {
+      console.error('❌ Database query failed for monthly data, falling back to empty data:', dbError);
+
+      // Si falla la BD, devolver array vacío
+      res.json([]);
+    }
+
+  } catch (error) {
+    console.error('❌ Error in getMonthlyData:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Scoring de probabilidad de pago por cliente
 export const getPaymentProbability = async (req, res) => {
   try {
@@ -1038,5 +1159,6 @@ export default {
   getAlertsConfig,
   getSalesPrediction,
   getPaymentProbability,
-  getSeasonalityAnalysis
+  getSeasonalityAnalysis,
+  getMonthlyData
 };

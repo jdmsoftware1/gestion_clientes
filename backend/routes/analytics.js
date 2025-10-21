@@ -9,7 +9,8 @@ import {
   getAlertsConfig,
   getSalesPrediction,
   getPaymentProbability,
-  getSeasonalityAnalysis
+  getSeasonalityAnalysis,
+  getMonthlyData
 } from '../controllers/analyticsController.js';
 
 // Controladores de test inline para evitar problemas de importación
@@ -149,6 +150,7 @@ router.get('/alerts/config', getAlertsConfig);
 router.get('/prediction', getSalesPrediction);
 router.get('/payment-probability', getPaymentProbability);
 router.get('/seasonality', getSeasonalityAnalysis);
+router.get('/monthly', getMonthlyData);
 
 // 🧪 RUTAS DE TEST - Datos simulados para pruebas
 router.get('/test/kpis', testGetAdvancedKPIs);

@@ -20,17 +20,17 @@ import {
   CircularProgress,
   Typography,
 } from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
+import UndoIcon from '@mui/icons-material/Undo';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import DownloadIcon from '@mui/icons-material/Download';
-import { salesAPI, clientsAPI } from '../api/services';
+import { returnsAPI, clientsAPI } from '../api/services';
 import { useSalesperson } from '../context/SalespersonContext';
-import { exportSalesToCSV } from '../utils/csvExport';
+import { exportReturnsToCSV } from '../utils/csvExport';
 
-const Sales = () => {
+const Returns = () => {
   const { selectedSalesperson } = useSalesperson();
-  const [sales, setSales] = useState([]);
+  const [returns, setReturns] = useState([]);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -39,21 +39,22 @@ const Sales = () => {
   const [formData, setFormData] = useState({
     amount: '',
     description: '',
+    returnReason: '',
     clientId: '',
   });
 
   useEffect(() => {
     if (selectedSalesperson) {
-      fetchSales();
+      fetchReturns();
       fetchClients();
     }
   }, [selectedSalesperson]);
 
-  const fetchSales = async () => {
+  const fetchReturns = async () => {
     try {
       setLoading(true);
-      const response = await salesAPI.getAll({ salespersonId: selectedSalesperson.id });
-      setSales(response.data);
+      const response = await returnsAPI.getAll({ salespersonId: selectedSalesperson.id });
+      setReturns(response.data);
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -71,19 +72,21 @@ const Sales = () => {
     }
   };
 
-  const handleOpenDialog = (sale = null) => {
-    if (sale) {
-      setEditingId(sale.id);
+  const handleOpenDialog = (returnItem = null) => {
+    if (returnItem) {
+      setEditingId(returnItem.id);
       setFormData({
-        amount: sale.amount,
-        description: sale.description,
-        clientId: sale.clientId,
+        amount: returnItem.amount,
+        description: returnItem.description,
+        returnReason: returnItem.returnReason,
+        clientId: returnItem.clientId,
       });
     } else {
       setEditingId(null);
       setFormData({
         amount: '',
         description: '',
+        returnReason: '',
         clientId: '',
       });
     }
@@ -96,13 +99,14 @@ const Sales = () => {
     setFormData({
       amount: '',
       description: '',
+      returnReason: '',
       clientId: '',
     });
   };
 
   const handleSubmit = async () => {
     if (!formData.amount || !formData.description || !formData.clientId) {
-      setError('Todos los campos son requeridos');
+      setError('Monto, descripción y cliente son requeridos');
       return;
     }
 
@@ -112,11 +116,11 @@ const Sales = () => {
         amount: parseFloat(formData.amount),
       };
       if (editingId) {
-        await salesAPI.update(editingId, data);
+        await returnsAPI.update(editingId, data);
       } else {
-        await salesAPI.create(data);
+        await returnsAPI.create(data);
       }
-      fetchSales();
+      fetchReturns();
       handleCloseDialog();
     } catch (err) {
       setError(err.message);
@@ -126,8 +130,8 @@ const Sales = () => {
   const handleDelete = async (id) => {
     if (window.confirm('¿Estás seguro?')) {
       try {
-        await salesAPI.delete(id);
-        fetchSales();
+        await returnsAPI.delete(id);
+        fetchReturns();
       } catch (err) {
         setError(err.message);
       }
@@ -138,9 +142,9 @@ const Sales = () => {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
-          <Typography variant="h4">Ventas</Typography>
+          <Typography variant="h4">Devoluciones</Typography>
           {selectedSalesperson && (
-            <Typography variant="body2" sx={{ color: '#2E7D32', fontWeight: 500 }}>
+            <Typography variant="body2" sx={{ color: '#ff9800', fontWeight: 500 }}>
               Vendedor: {selectedSalesperson.name}
             </Typography>
           )}
@@ -149,8 +153,8 @@ const Sales = () => {
           <Button
             variant="outlined"
             startIcon={<DownloadIcon />}
-            onClick={() => exportSalesToCSV(sales)}
-            disabled={sales.length === 0}
+            onClick={() => exportReturnsToCSV(returns)}
+            disabled={returns.length === 0}
           >
             Exportar CSV
           </Button>
@@ -158,7 +162,9 @@ const Sales = () => {
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => handleOpenDialog()}
+            sx={{ backgroundColor: '#ff9800', '&:hover': { backgroundColor: '#f57c00' } }}
           >
+            Nueva Devolución
           </Button>
         </Box>
       </Box>
@@ -171,24 +177,28 @@ const Sales = () => {
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
-              <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                <TableCell>Cliente</TableCell>
-                <TableCell>Descripción</TableCell>
-                <TableCell align="right">Monto</TableCell>
-                <TableCell>Fecha</TableCell>
-                <TableCell align="center">Acciones</TableCell>
+              <TableRow sx={{ backgroundColor: '#fff3e0' }}>
+                <TableCell sx={{ fontWeight: 'bold' }}>Cliente</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Descripción</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Motivo</TableCell>
+                <TableCell align="right" sx={{ fontWeight: 'bold' }}>Monto</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Fecha</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 'bold' }}>Acciones</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {sales.map((item) => (
-                <TableRow key={item.id}>
+              {returns.map((item) => (
+                <TableRow key={item.id} sx={{ backgroundColor: '#fff8e1' }}>
                   <TableCell>{item.client?.name || '-'}</TableCell>
                   <TableCell>{item.description}</TableCell>
-                  <TableCell align="right">€ {parseFloat(item.amount).toFixed(2)}</TableCell>
+                  <TableCell>{item.returnReason || 'No especificado'}</TableCell>
+                  <TableCell align="right" sx={{ color: '#f57c00', fontWeight: 'bold' }}>
+                    € {parseFloat(item.amount).toFixed(2)}
+                  </TableCell>
                   <TableCell>{new Date(item.createdAt).toLocaleDateString()}</TableCell>
                   <TableCell align="center">
                     <IconButton size="small" onClick={() => handleOpenDialog(item)}>
-                      <EditIcon />
+                      <UndoIcon sx={{ color: '#ff9800' }} />
                     </IconButton>
                     <IconButton size="small" onClick={() => handleDelete(item.id)}>
                       <DeleteIcon />
@@ -202,13 +212,15 @@ const Sales = () => {
       )}
 
       <Dialog open={openDialog} onClose={handleCloseDialog}>
-        <DialogTitle>{editingId ? 'Editar Venta' : 'Nueva Venta'}</DialogTitle>
-        <DialogContent sx={{ pt: 2, minWidth: '400px' }}>
+        <DialogTitle sx={{ backgroundColor: '#fff3e0' }}>
+          {editingId ? 'Editar Devolución' : 'Nueva Devolución'}
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3, minWidth: '400px' }}>
           <Autocomplete
             fullWidth
-            sx={{ mb: 2 }} 
+            sx={{ mb: 2 }}
             options={clients}
-            getOptionLabel={(option) => 
+            getOptionLabel={(option) =>
               `${option.internalCode ? `[${option.internalCode}] ` : ''}${option.name}`
             }
             value={clients.find(c => c.id === formData.clientId) || null}
@@ -223,7 +235,7 @@ const Sales = () => {
           />
           <TextField
             fullWidth
-            label="Monto"
+            label="Monto de la Devolución *"
             type="number"
             inputProps={{ step: '0.01' }}
             value={formData.amount}
@@ -232,17 +244,29 @@ const Sales = () => {
           />
           <TextField
             fullWidth
-            label="Descripción"
+            label="Descripción de la Devolución *"
             multiline
             rows={3}
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Motivo de la Devolución"
+            value={formData.returnReason}
+            onChange={(e) => setFormData({ ...formData, returnReason: e.target.value })}
+            placeholder="Ej: Producto defectuoso, cambio de talla"
           />
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ backgroundColor: '#f9f9f9' }}>
           <Button onClick={handleCloseDialog}>Cancelar</Button>
-          <Button onClick={handleSubmit} variant="contained">
-            {editingId ? 'Actualizar' : 'Crear'}
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            sx={{ backgroundColor: '#ff9800', '&:hover': { backgroundColor: '#f57c00' } }}
+          >
+            {editingId ? 'Actualizar' : 'Registrar'} Devolución
           </Button>
         </DialogActions>
       </Dialog>
@@ -250,4 +274,4 @@ const Sales = () => {
   );
 };
 
-export default Sales;
+export default Returns;

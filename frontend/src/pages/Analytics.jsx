@@ -18,6 +18,12 @@ import {
   Switch,
   FormControlLabel,
   Chip,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from '@mui/material';
 import {
   Assessment,
@@ -51,6 +57,8 @@ const Analytics = () => {
   const [period, setPeriod] = useState('daily');
   const [activeTab, setActiveTab] = useState(0);
   const [demoMode, setDemoMode] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   
   // Estados para datos
   const [loading, setLoading] = useState(false);
@@ -59,8 +67,25 @@ const Analytics = () => {
   const [trendData, setTrendData] = useState(null);
   const [comparisonData, setComparisonData] = useState([]);
   const [isDataDemo, setIsDataDemo] = useState(false);
+  const [monthlyData, setMonthlyData] = useState([]);
 
-  // Cargar datos
+  // Cargar datos mensuales por vendedor
+  const fetchMonthlyData = async () => {
+    try {
+      const params = {
+        year: selectedYear,
+        month: selectedMonth,
+        demoMode: demoMode.toString(),
+        ...(selectedSalesperson?.id !== 'TODOS' ? { salespersonId: selectedSalesperson.id } : {})
+      };
+
+      const response = await analyticsAPI.getMonthlyData(params);
+      setMonthlyData(response.data);
+    } catch (error) {
+      console.error('Error fetching monthly data:', error);
+      setMonthlyData([]);
+    }
+  };
   const fetchAnalyticsData = async () => {
     try {
       setLoading(true);
@@ -95,8 +120,9 @@ const Analytics = () => {
   useEffect(() => {
     if (selectedSalesperson) {
       fetchAnalyticsData();
+      fetchMonthlyData();
     }
-  }, [selectedSalesperson, dateFrom, dateTo, period, demoMode]);
+  }, [selectedSalesperson, dateFrom, dateTo, period, demoMode, selectedMonth, selectedYear]);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
@@ -183,6 +209,40 @@ const Analytics = () => {
               <MenuItem value="monthly">Mensual</MenuItem>
             </Select>
           </FormControl>
+          <FormControl size="small" sx={{ minWidth: '100px' }}>
+            <InputLabel>Mes</InputLabel>
+            <Select
+              value={selectedMonth}
+              label="Mes"
+              onChange={(e) => setSelectedMonth(e.target.value)}
+            >
+              <MenuItem value={1}>Enero</MenuItem>
+              <MenuItem value={2}>Febrero</MenuItem>
+              <MenuItem value={3}>Marzo</MenuItem>
+              <MenuItem value={4}>Abril</MenuItem>
+              <MenuItem value={5}>Mayo</MenuItem>
+              <MenuItem value={6}>Junio</MenuItem>
+              <MenuItem value={7}>Julio</MenuItem>
+              <MenuItem value={8}>Agosto</MenuItem>
+              <MenuItem value={9}>Septiembre</MenuItem>
+              <MenuItem value={10}>Octubre</MenuItem>
+              <MenuItem value={11}>Noviembre</MenuItem>
+              <MenuItem value={12}>Diciembre</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: '100px' }}>
+            <InputLabel>Año</InputLabel>
+            <Select
+              value={selectedYear}
+              label="Año"
+              onChange={(e) => setSelectedYear(e.target.value)}
+            >
+              <MenuItem value={2023}>2023</MenuItem>
+              <MenuItem value={2024}>2024</MenuItem>
+              <MenuItem value={2025}>2025</MenuItem>
+              <MenuItem value={2026}>2026</MenuItem>
+            </Select>
+          </FormControl>
           <FormControlLabel
             control={
               <Switch
@@ -238,6 +298,7 @@ const Analytics = () => {
           <Tab label="Tendencias" />
           <Tab label="Comparativas" />
           <Tab label="Distribución" />
+          <Tab label="Vista Mensual" />
         </Tabs>
       </Box>
 
@@ -370,6 +431,120 @@ const Analytics = () => {
                         </Typography>
                       </Box>
                     ))}
+                  </Box>
+                </Paper>
+              </Grid>
+            </Grid>
+          )}
+
+          {/* Tab 4: Vista Mensual */}
+          {activeTab === 4 && (
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <Paper sx={{ p: 3 }}>
+                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    📊 Vista Mensual - {new Date(selectedYear, selectedMonth - 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).toUpperCase()}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
+                    Resumen mensual de ventas y pagos por vendedor (formato Excel)
+                  </Typography>
+
+                  <Box sx={{ overflowX: 'auto' }}>
+                    <Table sx={{ minWidth: 800 }}>
+                      <TableHead>
+                        <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                          <TableCell sx={{ fontWeight: 'bold', border: '1px solid #ddd', minWidth: '180px' }}>
+                            Vendedor
+                          </TableCell>
+                          <TableCell align="center" sx={{ fontWeight: 'bold', border: '1px solid #ddd', backgroundColor: '#e8f5e9' }}>
+                            Ventas
+                          </TableCell>
+                          <TableCell align="center" sx={{ fontWeight: 'bold', border: '1px solid #ddd', backgroundColor: '#e8f5e9' }}>
+                            Total Ventas (€)
+                          </TableCell>
+                          <TableCell align="center" sx={{ fontWeight: 'bold', border: '1px solid #ddd', backgroundColor: '#e3f2fd' }}>
+                            Pagos
+                          </TableCell>
+                          <TableCell align="center" sx={{ fontWeight: 'bold', border: '1px solid #ddd', backgroundColor: '#e3f2fd' }}>
+                            Total Pagos (€)
+                          </TableCell>
+                          <TableCell align="center" sx={{ fontWeight: 'bold', border: '1px solid #ddd', backgroundColor: '#fff3e0' }}>
+                            Deuda Pendiente (€)
+                          </TableCell>
+                          <TableCell align="center" sx={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
+                            Clientes Activos
+                          </TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {monthlyData.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={7} align="center" sx={{ py: 4, color: '#999', fontStyle: 'italic' }}>
+                              No hay datos disponibles para {new Date(selectedYear, selectedMonth - 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          monthlyData.map((row, index) => (
+                            <TableRow key={index} sx={{ '&:hover': { backgroundColor: '#f9f9f9' } }}>
+                              <TableCell sx={{ fontWeight: 500, border: '1px solid #ddd' }}>
+                                {row.salesperson_name}
+                              </TableCell>
+                              <TableCell align="center" sx={{ border: '1px solid #ddd', backgroundColor: '#f1f8e9', fontWeight: 'bold' }}>
+                                {row.total_sales}
+                              </TableCell>
+                              <TableCell align="right" sx={{ border: '1px solid #ddd', backgroundColor: '#f1f8e9', fontWeight: 'bold', color: '#2E7D32' }}>
+                                €{parseFloat(row.total_sales_amount || 0).toFixed(2)}
+                              </TableCell>
+                              <TableCell align="center" sx={{ border: '1px solid #ddd', backgroundColor: '#e3f2fd', fontWeight: 'bold' }}>
+                                {row.total_payments}
+                              </TableCell>
+                              <TableCell align="right" sx={{ border: '1px solid #ddd', backgroundColor: '#e3f2fd', fontWeight: 'bold', color: '#1976d2' }}>
+                                €{parseFloat(row.total_payments_amount || 0).toFixed(2)}
+                              </TableCell>
+                              <TableCell align="right" sx={{ border: '1px solid #ddd', backgroundColor: '#fff3e0', fontWeight: 'bold', color: parseFloat(row.pending_debt || 0) > 0 ? '#f57c00' : '#2E7D32' }}>
+                                €{parseFloat(row.pending_debt || 0).toFixed(2)}
+                              </TableCell>
+                              <TableCell align="center" sx={{ border: '1px solid #ddd', fontWeight: 'bold' }}>
+                                {row.active_clients}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                        {/* Totales */}
+                        {monthlyData.length > 0 && (
+                          <TableRow sx={{ backgroundColor: '#e8eaf6', borderTop: '2px solid #1976d2' }}>
+                            <TableCell sx={{ fontWeight: 'bold', border: '1px solid #ddd', color: '#1976d2' }}>
+                              TOTAL MENSUAL
+                            </TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 'bold', border: '1px solid #ddd', backgroundColor: '#c8e6c9' }}>
+                              {monthlyData.reduce((sum, row) => sum + (row.total_sales || 0), 0)}
+                            </TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 'bold', border: '1px solid #ddd', backgroundColor: '#c8e6c9', color: '#2E7D32' }}>
+                              €{monthlyData.reduce((sum, row) => sum + parseFloat(row.total_sales_amount || 0), 0).toFixed(2)}
+                            </TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 'bold', border: '1px solid #ddd', backgroundColor: '#bbdefb' }}>
+                              {monthlyData.reduce((sum, row) => sum + (row.total_payments || 0), 0)}
+                            </TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 'bold', border: '1px solid #ddd', backgroundColor: '#bbdefb', color: '#1976d2' }}>
+                              €{monthlyData.reduce((sum, row) => sum + parseFloat(row.total_payments_amount || 0), 0).toFixed(2)}
+                            </TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 'bold', border: '1px solid #ddd', backgroundColor: '#ffe0b2', color: '#f57c00' }}>
+                              €{monthlyData.reduce((sum, row) => sum + parseFloat(row.pending_debt || 0), 0).toFixed(2)}
+                            </TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
+                              {monthlyData.reduce((sum, row) => sum + (row.active_clients || 0), 0)}
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </Box>
+
+                  <Box sx={{ mt: 3, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
+                    <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
+                      💡 Esta vista muestra datos mensuales consolidados por vendedor, similar a una hoja de Excel.
+                      Permite un análisis rápido del rendimiento mensual de cada vendedor.
+                    </Typography>
                   </Box>
                 </Paper>
               </Grid>

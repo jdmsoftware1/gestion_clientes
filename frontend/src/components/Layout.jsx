@@ -21,6 +21,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import PersonIcon from '@mui/icons-material/Person';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import PaymentIcon from '@mui/icons-material/Payment';
+import UndoIcon from '@mui/icons-material/Undo';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import HistoryIcon from '@mui/icons-material/History';
@@ -58,6 +59,7 @@ const Layout = ({ children }) => {
     { label: 'Clientes', icon: <PersonIcon />, path: '/clients' },
     { label: 'Ventas', icon: <ShoppingCartIcon />, path: '/sales' },
     { label: 'Pagos', icon: <PaymentIcon />, path: '/payments' },
+    { label: 'Devoluciones', icon: <UndoIcon />, path: '/returns' },
     { label: 'Importar CSV', icon: <UploadFileIcon />, path: '/import' },
     { label: 'Análisis Avanzados', icon: <AssessmentIcon />, path: '/analytics' },
     { label: 'Analytics Históricos', icon: <HistoryIcon />, path: '/historical-analytics' },

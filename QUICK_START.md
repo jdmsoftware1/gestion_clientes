@@ -58,42 +58,66 @@
 
 1. **Abrir navegador**: http://localhost:5173
 
-2. **Crear tu primer vendedor**:
+2. **Explorar Clientes**: 
+   - **Click en cualquier fila** de cliente para ver sus detalles completos
+   - Información financiera, estado, fechas de creación/actualización
+   - **Desde el modal de detalles puedes:**
+     - Registrar ventas directamente con el botón 🛒 "Registrar Venta"
+     - Registrar pagos directamente con el botón 💳 "Registrar Pago"
+     - Ir directamente a editar el cliente
+
+3. **Crear tu primer vendedor**:
    - Menú ≡ → Vendedores → "Nuevo Vendedor"
    - Nombre: "Carlos García"
    - Email: carlos@example.com
 
-3. **Crear cliente**:
+4. **Crear cliente**:
    - Menú → Clientes → "Nuevo Cliente"
    - Nombre: "María López"
    - Teléfono: 600123456
+   - Dirección: "Calle Mayor 123, Madrid"
    - Vendedor: "Carlos García"
 
-4. **Crear venta**:
+5. **Crear venta**:
    - Menú → Ventas → "Nueva Venta"
    - Cliente: "María López"
    - Monto: 500€
    - Descripción: "Venta inicial"
 
-5. **Ver dashboard**: Deuda total aparecerá en 500€
+6. **Ver dashboard**: Deuda total aparecerá en 500€
 
-6. **Crear pago**:
+7. **Crear pago**:
    - Menú → Pagos → "Nuevo Pago"
    - Cliente: "María López"
    - Monto: 200€
    - Método: "Efectivo"
 
-7. **Ver resultado**: Deuda ahora es 300€
+8. **Ver resultado**: Deuda ahora es 300€
 
 ---
 
-## 📊 Funcionalidades Disponibles
+### 🎯 Funcionalidades Destacadas
 
-### Dashboard Principal
-- 📈 **KPIs en tiempo real**: Deuda total, ventas y pagos
-- 👥 **Ranking de vendedores** por rendimiento
-- 👤 **Clientes morosos** (>60 días sin pagar)
-- 🎯 **Oportunidades de venta** (deuda baja)
+#### 📋 **Gestión de Clientes Mejorada**
+- **Click en filas**: Ver detalles completos de cualquier cliente
+- **Botones de acción**: Registrar ventas/pagos directamente desde el detalle
+- **Campos completos**: Dirección y teléfono en creación y edición
+- **Paginación inteligente**: Solo 30 clientes inicialmente + "Cargar más"
+
+#### 📊 **Analytics Avanzados**
+- **Vista Mensual**: Tabla Excel-like con ventas/pagos por vendedor al mes
+- **Filtros mejorados**: Mes y año específicos para análisis mensual
+- **Exportación CSV**: Descarga datos de clientes, ventas, pagos y devoluciones
+
+#### 🔄 **Sistema de Devoluciones**
+- **Nueva tabla**: Gestión completa de devoluciones de productos
+- **Integración total**: Misma estructura que ventas con motivos personalizados
+
+#### 📥 **Exportación Universal**
+- **Clientes**: Datos completos con fechas y relaciones
+- **Ventas**: Histórico completo con clientes y montos
+- **Pagos**: Registro de cobros con métodos de pago
+- **Devoluciones**: Historial de devoluciones por cliente
 
 ### Gestión Completa
 - 🏪 **CRUD completo**: Vendedores, Clientes, Ventas, Pagos
