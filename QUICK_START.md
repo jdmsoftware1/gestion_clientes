@@ -58,32 +58,40 @@
 
 1. **Abrir navegador**: http://localhost:5173
 
-2. **Crear tu primer vendedor**:
+2. **Explorar Clientes**: 
+   - **Click en cualquier fila** de cliente para ver sus detalles completos
+   - Información financiera, estado, fechas de creación/actualización
+   - **Desde el modal de detalles puedes:**
+     - Registrar ventas directamente con el botón 🛒 "Registrar Venta"
+     - Registrar pagos directamente con el botón 💳 "Registrar Pago"
+     - Ir directamente a editar el cliente
+
+3. **Crear tu primer vendedor**:
    - Menú ≡ → Vendedores → "Nuevo Vendedor"
    - Nombre: "Carlos García"
    - Email: carlos@example.com
 
-3. **Crear cliente**:
+4. **Crear cliente**:
    - Menú → Clientes → "Nuevo Cliente"
    - Nombre: "María López"
    - Teléfono: 600123456
    - Vendedor: "Carlos García"
 
-4. **Crear venta**:
+5. **Crear venta**:
    - Menú → Ventas → "Nueva Venta"
    - Cliente: "María López"
    - Monto: 500€
    - Descripción: "Venta inicial"
 
-5. **Ver dashboard**: Deuda total aparecerá en 500€
+6. **Ver dashboard**: Deuda total aparecerá en 500€
 
-6. **Crear pago**:
+7. **Crear pago**:
    - Menú → Pagos → "Nuevo Pago"
    - Cliente: "María López"
    - Monto: 200€
    - Método: "Efectivo"
 
-7. **Ver resultado**: Deuda ahora es 300€
+8. **Ver resultado**: Deuda ahora es 300€
 
 ---
 

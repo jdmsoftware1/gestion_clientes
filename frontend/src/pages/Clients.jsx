@@ -27,7 +27,10 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
-import { clientsAPI, salespeopleAPI } from '../api/services';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import PaymentIcon from '@mui/icons-material/Payment';
+import { clientsAPI, salespeopleAPI, salesAPI, paymentsAPI } from '../api/services';
 import { useSalesperson } from '../context/SalespersonContext';
 
 const Clients = () => {
@@ -38,9 +41,23 @@ const Clients = () => {
   const [editingId, setEditingId] = useState(null);
   const [searchText, setSearchText] = useState('');
   const [salespeople, setSalespeople] = useState([]);
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [openDetailDialog, setOpenDetailDialog] = useState(false);
+  const [openSaleDialog, setOpenSaleDialog] = useState(false);
+  const [openPaymentDialog, setOpenPaymentDialog] = useState(false);
+  const [saleFormData, setSaleFormData] = useState({
+    amount: '',
+    description: '',
+  });
+  const [paymentFormData, setPaymentFormData] = useState({
+    amount: '',
+    paymentMethod: '',
+  });
   const [formData, setFormData] = useState({
     name: '',
     internalCode: '',
+    phone: '',
+    address: '',
     salespersonId: '',
   });
 
@@ -155,6 +172,96 @@ const Clients = () => {
     }
   };
 
+  const handleRowClick = (client) => {
+    setSelectedClient(client);
+    setOpenDetailDialog(true);
+  };
+
+  const handleCloseDetailDialog = () => {
+    setOpenDetailDialog(false);
+    setSelectedClient(null);
+  };
+
+  const handleOpenSaleDialog = (client) => {
+    setSelectedClient(client);
+    setSaleFormData({
+      amount: '',
+      description: '',
+    });
+    setOpenSaleDialog(true);
+  };
+
+  const handleCloseSaleDialog = () => {
+    setOpenSaleDialog(false);
+    setSaleFormData({
+      amount: '',
+      description: '',
+    });
+  };
+
+  const handleOpenPaymentDialog = (client) => {
+    setSelectedClient(client);
+    setPaymentFormData({
+      amount: '',
+      paymentMethod: '',
+    });
+    setOpenPaymentDialog(true);
+  };
+
+  const handleClosePaymentDialog = () => {
+    setOpenPaymentDialog(false);
+    setPaymentFormData({
+      amount: '',
+      paymentMethod: '',
+    });
+  };
+
+  const handleCreateSale = async () => {
+    if (!saleFormData.amount || !saleFormData.description) {
+      setError('Monto y descripción son requeridos');
+      return;
+    }
+
+    try {
+      const data = {
+        ...saleFormData,
+        amount: parseFloat(saleFormData.amount),
+        clientId: selectedClient.id,
+      };
+
+      await salesAPI.create(data);
+      fetchClients(); // Para actualizar la deuda del cliente
+      handleCloseSaleDialog();
+      handleCloseDetailDialog();
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleCreatePayment = async () => {
+    if (!paymentFormData.amount || !paymentFormData.paymentMethod) {
+      setError('Monto y método de pago son requeridos');
+      return;
+    }
+
+    try {
+      const data = {
+        ...paymentFormData,
+        amount: parseFloat(paymentFormData.amount),
+        clientId: selectedClient.id,
+      };
+
+      await paymentsAPI.create(data);
+      fetchClients(); // Para actualizar la deuda del cliente
+      handleClosePaymentDialog();
+      handleCloseDetailDialog();
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -213,7 +320,18 @@ const Clients = () => {
                   </TableRow>
                 ) : (
                   filteredClients.map((item) => (
-                    <TableRow key={item.id} sx={item.debt < 50 ? { backgroundColor: '#e8f5e9' } : {}}>
+                    <TableRow 
+                      key={item.id} 
+                      sx={{
+                        ...item.debt < 50 ? { backgroundColor: '#e8f5e9' } : {},
+                        cursor: 'pointer',
+                        '&:hover': { 
+                          backgroundColor: item.debt < 50 ? '#c8e6c9' : '#f5f5f5',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                        }
+                      }}
+                      onClick={() => handleRowClick(item)}
+                    >
                       <TableCell>
                         <Typography variant="body2" sx={{ fontWeight: 500, color: '#1976d2' }}>
                           {item.internalCode || '-'}
@@ -234,22 +352,41 @@ const Clients = () => {
                         />
                       </TableCell>
                       <TableCell align="center">
-                        <IconButton 
-                          size="small" 
-                          onClick={() => handleOpenDialog(item)}
-                          color="primary"
-                          title="Editar"
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton 
-                          size="small" 
-                          onClick={() => handleDelete(item.id)}
-                          color="error"
-                          title="Eliminar"
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
+                        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+                          <IconButton 
+                            size="small" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRowClick(item);
+                            }}
+                            color="info"
+                            title="Ver Detalles"
+                          >
+                            <VisibilityIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton 
+                            size="small" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenDialog(item);
+                            }}
+                            color="primary"
+                            title="Editar"
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton 
+                            size="small" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(item.id);
+                            }}
+                            color="error"
+                            title="Eliminar"
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
                       </TableCell>
                     </TableRow>
                   ))
@@ -303,6 +440,289 @@ const Clients = () => {
           <Button onClick={handleCloseDialog}>Cancelar</Button>
           <Button onClick={handleSubmit} variant="contained">
             {editingId ? 'Actualizar' : 'Crear'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de Detalles del Cliente */}
+      <Dialog 
+        open={openDetailDialog} 
+        onClose={handleCloseDetailDialog} 
+        maxWidth="md" 
+        fullWidth
+      >
+        <DialogTitle sx={{ backgroundColor: '#f5f5f5', pb: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#2E7D32' }}>
+              📋 Detalles del Cliente
+            </Typography>
+            {selectedClient && (
+              <Chip 
+                label={selectedClient.internalCode || 'Sin código'} 
+                size="small" 
+                color="primary" 
+                variant="outlined"
+              />
+            )}
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          {selectedClient && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {/* Información Principal */}
+              <Paper sx={{ p: 2, backgroundColor: '#f9f9f9' }}>
+                <Typography variant="h6" sx={{ mb: 2, color: '#1976d2', fontWeight: 'bold' }}>
+                  Información Principal
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" color="textSecondary">Nombre</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      {selectedClient.name}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" color="textSecondary">Código Interno</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      {selectedClient.internalCode || 'No especificado'}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" color="textSecondary">Teléfono</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      {selectedClient.phone || 'No especificado'}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" color="textSecondary">Dirección</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      {selectedClient.address || 'No especificada'}
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Paper>
+
+              {/* Información Financiera */}
+              <Paper sx={{ p: 2, backgroundColor: '#f9f9f9' }}>
+                <Typography variant="h6" sx={{ mb: 2, color: '#d32f2f', fontWeight: 'bold' }}>
+                  💰 Información Financiera
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" color="textSecondary">Deuda Actual</Typography>
+                    <Typography 
+                      variant="h6" 
+                      sx={{ 
+                        fontWeight: 'bold',
+                        color: selectedClient.debt > 0 ? '#d32f2f' : '#2E7D32'
+                      }}
+                    >
+                      € {selectedClient.debt?.toFixed(2) || '0.00'}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" color="textSecondary">Último Pago</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      {selectedClient.lastPaymentMonth || 'Sin pagos registrados'}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" color="textSecondary">Estado</Typography>
+                    <Chip 
+                      label={
+                        selectedClient.debt === 0 ? 'Sin deuda' :
+                        selectedClient.debt < 50 ? 'Oportunidad' :
+                        'Con deuda'
+                      }
+                      color={
+                        selectedClient.debt === 0 ? 'success' :
+                        selectedClient.debt < 50 ? 'warning' :
+                        'error'
+                      }
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" color="textSecondary">Total de Ventas</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      {selectedClient.totalSales ? Math.round(selectedClient.totalSales) : 0} operaciones
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Paper>
+
+              {/* Información de Fechas */}
+              <Paper sx={{ p: 2, backgroundColor: '#f9f9f9' }}>
+                <Typography variant="h6" sx={{ mb: 2, color: '#ff9800', fontWeight: 'bold' }}>
+                  📅 Información de Fechas
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" color="textSecondary">Fecha de Creación</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      {selectedClient.createdAt ? new Date(selectedClient.createdAt).toLocaleDateString() : 'No disponible'}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" color="textSecondary">Última Actualización</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      {selectedClient.updatedAt ? new Date(selectedClient.updatedAt).toLocaleDateString() : 'No disponible'}
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Paper>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ backgroundColor: '#f5f5f5', pt: 2, flexWrap: 'wrap', gap: 1 }}>
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            <Button 
+              onClick={() => handleOpenSaleDialog(selectedClient)}
+              variant="contained" 
+              color="success"
+              startIcon={<ShoppingCartIcon />}
+            >
+              Registrar Venta
+            </Button>
+            <Button 
+              onClick={() => handleOpenPaymentDialog(selectedClient)}
+              variant="contained" 
+              color="info"
+              startIcon={<PaymentIcon />}
+            >
+              Registrar Pago
+            </Button>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button onClick={handleCloseDetailDialog} variant="outlined">
+              Cerrar
+            </Button>
+            <Button 
+              onClick={() => {
+                handleCloseDetailDialog();
+                handleOpenDialog(selectedClient);
+              }} 
+              variant="contained" 
+              color="primary"
+              startIcon={<EditIcon />}
+            >
+              Editar Cliente
+            </Button>
+          </Box>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de Registrar Venta */}
+      <Dialog open={openSaleDialog} onClose={handleCloseSaleDialog} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ backgroundColor: '#e8f5e9' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <ShoppingCartIcon sx={{ color: '#2E7D32' }} />
+            <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#2E7D32' }}>
+              Registrar Nueva Venta
+            </Typography>
+          </Box>
+          {selectedClient && (
+            <Typography variant="body2" sx={{ color: '#666', mt: 1 }}>
+              Cliente: {selectedClient.name}
+            </Typography>
+          )}
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              fullWidth
+              label="Monto de la Venta *"
+              type="number"
+              inputProps={{ step: '0.01', min: '0' }}
+              value={saleFormData.amount}
+              onChange={(e) => setSaleFormData({ ...saleFormData, amount: e.target.value })}
+              placeholder="Ej: 500.00"
+              required
+              autoFocus
+              size="small"
+            />
+            <TextField
+              fullWidth
+              label="Descripción de la Venta *"
+              multiline
+              rows={3}
+              value={saleFormData.description}
+              onChange={(e) => setSaleFormData({ ...saleFormData, description: e.target.value })}
+              placeholder="Ej: Venta de productos electrónicos"
+              required
+              size="small"
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ backgroundColor: '#f9f9f9', pt: 2 }}>
+          <Button onClick={handleCloseSaleDialog} variant="outlined">
+            Cancelar
+          </Button>
+          <Button 
+            onClick={handleCreateSale} 
+            variant="contained" 
+            color="success"
+            startIcon={<ShoppingCartIcon />}
+            disabled={!saleFormData.amount || !saleFormData.description}
+          >
+            Registrar Venta
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de Registrar Pago */}
+      <Dialog open={openPaymentDialog} onClose={handleClosePaymentDialog} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ backgroundColor: '#e3f2fd' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <PaymentIcon sx={{ color: '#1976d2' }} />
+            <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+              Registrar Nuevo Pago
+            </Typography>
+          </Box>
+          {selectedClient && (
+            <Typography variant="body2" sx={{ color: '#666', mt: 1 }}>
+              Cliente: {selectedClient.name} | Deuda actual: € {selectedClient.debt?.toFixed(2) || '0.00'}
+            </Typography>
+          )}
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              fullWidth
+              label="Monto del Pago *"
+              type="number"
+              inputProps={{ step: '0.01', min: '0' }}
+              value={paymentFormData.amount}
+              onChange={(e) => setPaymentFormData({ ...paymentFormData, amount: e.target.value })}
+              placeholder="Ej: 200.00"
+              required
+              autoFocus
+              size="small"
+              helperText={`Deuda actual del cliente: € ${selectedClient?.debt?.toFixed(2) || '0.00'}`}
+            />
+            <TextField
+              fullWidth
+              label="Método de Pago *"
+              value={paymentFormData.paymentMethod}
+              onChange={(e) => setPaymentFormData({ ...paymentFormData, paymentMethod: e.target.value })}
+              placeholder="Ej: Efectivo, Transferencia, Tarjeta"
+              required
+              size="small"
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ backgroundColor: '#f9f9f9', pt: 2 }}>
+          <Button onClick={handleClosePaymentDialog} variant="outlined">
+            Cancelar
+          </Button>
+          <Button 
+            onClick={handleCreatePayment} 
+            variant="contained" 
+            color="info"
+            startIcon={<PaymentIcon />}
+            disabled={!paymentFormData.amount || !paymentFormData.paymentMethod}
+          >
+            Registrar Pago
           </Button>
         </DialogActions>
       </Dialog>
