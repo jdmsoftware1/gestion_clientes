@@ -34,6 +34,7 @@ app.use('/api/salespeople', salespeopleRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/sales', saleRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/returns', returnRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/import', importRoutes);
 app.use('/api/month-closures', monthClosureRoutes);

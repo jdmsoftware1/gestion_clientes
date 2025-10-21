@@ -7,6 +7,7 @@ import Salespeople from './pages/Salespeople';
 import Clients from './pages/Clients';
 import Sales from './pages/Sales';
 import Payments from './pages/Payments';
+import Returns from './pages/Returns';
 import Import from './pages/Import';
 import Analytics from './pages/Analytics';
 import HistoricalAnalyticsPage from './pages/HistoricalAnalytics';
@@ -25,6 +26,7 @@ function App() {
             <Route path="/clients" element={<Clients />} />
             <Route path="/sales" element={<Sales />} />
             <Route path="/payments" element={<Payments />} />
+            <Route path="/returns" element={<Returns />} />
             <Route path="/import" element={<Import />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/historical-analytics" element={<HistoricalAnalyticsPage />} />

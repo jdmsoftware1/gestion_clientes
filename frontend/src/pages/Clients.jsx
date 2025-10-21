@@ -30,8 +30,10 @@ import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import PaymentIcon from '@mui/icons-material/Payment';
+import DownloadIcon from '@mui/icons-material/Download';
 import { clientsAPI, salespeopleAPI, salesAPI, paymentsAPI } from '../api/services';
 import { useSalesperson } from '../context/SalespersonContext';
+import { exportClientsToCSV, exportSalesToCSV, exportPaymentsToCSV } from '../utils/csvExport';
 
 const Clients = () => {
   const [clients, setClients] = useState([]);
@@ -53,6 +55,10 @@ const Clients = () => {
     amount: '',
     paymentMethod: '',
   });
+  // Estados para paginación
+  const [displayedClients, setDisplayedClients] = useState([]);
+  const [hasMoreClients, setHasMoreClients] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     internalCode: '',
@@ -65,15 +71,15 @@ const Clients = () => {
 
   // Filtrar clientes según búsqueda
   const filteredClients = useMemo(() => {
-    if (!searchText.trim()) return clients;
+    if (!searchText.trim()) return displayedClients;
     
     const searchLower = searchText.toLowerCase();
-    return clients.filter(client =>
+    return displayedClients.filter(client =>
       client.name?.toLowerCase().includes(searchLower) ||
       client.internalCode?.toLowerCase().includes(searchLower) ||
       client.id?.toString().includes(searchLower)
     );
-  }, [clients, searchText]);
+  }, [displayedClients, searchText]);
 
   useEffect(() => {
     if (selectedSalesperson) {
@@ -91,17 +97,42 @@ const Clients = () => {
     }
   };
 
-  const fetchClients = async () => {
+  const fetchClients = async (loadMore = false) => {
     try {
-      setLoading(true);
+      if (!loadMore) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+      
       const response = await clientsAPI.getAll({ salespersonId: selectedSalesperson.id });
-      setClients(response.data);
+      const allClients = response.data;
+      
+      if (!loadMore) {
+        // Primera carga: mostrar solo los primeros 30
+        const initialClients = allClients.slice(0, 30);
+        setClients(allClients);
+        setDisplayedClients(initialClients);
+        setHasMoreClients(allClients.length > 30);
+      } else {
+        // Cargar más: agregar los siguientes 30
+        const currentCount = displayedClients.length;
+        const nextClients = allClients.slice(currentCount, currentCount + 30);
+        setDisplayedClients(prev => [...prev, ...nextClients]);
+        setHasMoreClients(currentCount + nextClients.length < allClients.length);
+      }
+      
       setError(null);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
+  };
+
+  const loadMoreClients = () => {
+    fetchClients(true);
   };
 
   const handleOpenDialog = (client = null) => {
@@ -164,7 +195,7 @@ const Clients = () => {
       } else {
         await clientsAPI.create(dataToSubmit);
       }
-      fetchClients();
+      fetchClients(); // Refresca la paginación completa
       handleCloseDialog();
     } catch (err) {
       setError(err.message);
@@ -175,7 +206,7 @@ const Clients = () => {
     if (window.confirm('¿Estás seguro?')) {
       try {
         await clientsAPI.delete(id);
-        fetchClients();
+        fetchClients(); // Refresca la paginación completa
       } catch (err) {
         setError(err.message);
       }
@@ -283,13 +314,23 @@ const Clients = () => {
             </Typography>
           )}
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
-        >
-          Nuevo Cliente
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            onClick={() => exportClientsToCSV(clients)}
+            disabled={clients.length === 0}
+          >
+            Exportar CSV
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => handleOpenDialog()}
+          >
+            Nuevo Cliente
+          </Button>
+        </Box>
       </Box>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -404,6 +445,27 @@ const Clients = () => {
               </TableBody>
             </Table>
           </TableContainer>
+
+          {/* Botón Cargar Más */}
+          {hasMoreClients && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 2 }}>
+              <Button
+                variant="outlined"
+                onClick={loadMoreClients}
+                disabled={loadingMore}
+                sx={{ minWidth: '200px' }}
+              >
+                {loadingMore ? (
+                  <>
+                    <CircularProgress size={20} sx={{ mr: 1 }} />
+                    Cargando...
+                  </>
+                ) : (
+                  `Cargar Más Clientes (${clients.length - displayedClients.length} restantes)`
+                )}
+              </Button>
+            </Box>
+          )}
         </>
       )}
 

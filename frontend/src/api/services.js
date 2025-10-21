@@ -39,6 +39,15 @@ export const paymentsAPI = {
   getByClient: (clientId) => axiosInstance.get(`/payments/client/${clientId}`),
 };
 
+// Returns API
+export const returnsAPI = {
+  getAll: (params) => axiosInstance.get('/returns', { params }),
+  getById: (id) => axiosInstance.get(`/returns/${id}`),
+  create: (data) => axiosInstance.post('/returns', data),
+  update: (id, data) => axiosInstance.put(`/returns/${id}`, data),
+  delete: (id) => axiosInstance.delete(`/returns/${id}`),
+};
+
 // Dashboard API
 export const dashboardAPI = {
   getKPIs: (params) => axiosInstance.get('/dashboard/kpis', { params }),
