@@ -1,4 +1,5 @@
 import { Return, Client, Salesperson } from '../models/index.js';
+import { transformDatesForFrontend } from '../utils/transformDates.js';
 
 // Get all returns for a salesperson
 export const getAllReturns = async (req, res) => {
@@ -17,10 +18,13 @@ export const getAllReturns = async (req, res) => {
         required: true,
         include: [{ model: Salesperson, as: 'salesperson' }]
       }],
-      order: [['createdAt', 'DESC']]
+      order: [['created_at', 'DESC']]
     });
 
-    res.json(returns);
+    // Transformar las fechas antes de enviar al frontend
+    const transformedReturns = returns.map(returnItem => transformDatesForFrontend(returnItem.toJSON()));
+
+    res.json(transformedReturns);
   } catch (error) {
     console.error('Error in getAllReturns:', error);
     res.status(500).json({ error: error.message });
@@ -44,7 +48,10 @@ export const getReturnById = async (req, res) => {
       return res.status(404).json({ error: 'Return not found' });
     }
 
-    res.json(returnItem);
+    // Transformar las fechas antes de enviar al frontend
+    const transformedReturn = transformDatesForFrontend(returnItem.toJSON());
+
+    res.json(transformedReturn);
   } catch (error) {
     console.error('Error in getReturnById:', error);
     res.status(500).json({ error: error.message });
@@ -81,7 +88,10 @@ export const createReturn = async (req, res) => {
       }]
     });
 
-    res.status(201).json(createdReturn);
+    // Transformar las fechas antes de enviar al frontend
+    const transformedCreatedReturn = transformDatesForFrontend(createdReturn.toJSON());
+
+    res.status(201).json(transformedCreatedReturn);
   } catch (error) {
     console.error('Error in createReturn:', error);
     res.status(500).json({ error: error.message });
@@ -113,7 +123,10 @@ export const updateReturn = async (req, res) => {
       }]
     });
 
-    res.json(updatedReturn);
+    // Transformar las fechas antes de enviar al frontend
+    const transformedUpdatedReturn = transformDatesForFrontend(updatedReturn.toJSON());
+
+    res.json(transformedUpdatedReturn);
   } catch (error) {
     console.error('Error in updateReturn:', error);
     res.status(500).json({ error: error.message });

@@ -938,6 +938,17 @@ export const getMonthlyData = async (req, res) => {
       });
 
       console.log(`✅ Real monthly data: ${monthlyData.length} salespeople for ${year}-${month}`);
+      console.log('📊 Sample data types:', {
+        first_row: monthlyData[0] ? {
+          salesperson_name: typeof monthlyData[0].salesperson_name,
+          total_sales: typeof monthlyData[0].total_sales,
+          total_sales_amount: typeof monthlyData[0].total_sales_amount,
+          total_payments: typeof monthlyData[0].total_payments,
+          total_payments_amount: typeof monthlyData[0].total_payments_amount,
+          pending_debt: typeof monthlyData[0].pending_debt,
+          active_clients: typeof monthlyData[0].active_clients
+        } : 'No data'
+      });
 
       res.json(monthlyData);
 

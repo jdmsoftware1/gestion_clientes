@@ -32,7 +32,8 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import PaymentIcon from '@mui/icons-material/Payment';
 import DownloadIcon from '@mui/icons-material/Download';
-import { clientsAPI, salespeopleAPI, salesAPI, paymentsAPI } from '../api/services';
+import UndoIcon from '@mui/icons-material/Undo';
+import { clientsAPI, salespeopleAPI, salesAPI, paymentsAPI, returnsAPI } from '../api/services';
 import { useSalesperson } from '../context/SalespersonContext';
 import { exportClientsToCSV, exportSalesToCSV, exportPaymentsToCSV } from '../utils/csvExport';
 
@@ -48,13 +49,19 @@ const Clients = () => {
   const [openDetailDialog, setOpenDetailDialog] = useState(false);
   const [openSaleDialog, setOpenSaleDialog] = useState(false);
   const [openPaymentDialog, setOpenPaymentDialog] = useState(false);
+  const [openReturnDialog, setOpenReturnDialog] = useState(false);
   const [saleFormData, setSaleFormData] = useState({
     amount: '',
-    description: '',
+    description: 'VARIOS',
   });
   const [paymentFormData, setPaymentFormData] = useState({
     amount: '',
-    paymentMethod: '',
+    paymentMethod: 'EFECTIVO',
+  });
+  const [returnFormData, setReturnFormData] = useState({
+    amount: '',
+    description: 'VARIOS',
+    returnReason: '',
   });
   // Estados para paginación
   const [displayedClients, setDisplayedClients] = useState([]);
@@ -162,6 +169,13 @@ const Clients = () => {
               : c
           )
         );
+
+        // También actualizar selectedClient si está abierto el modal de detalles
+        setSelectedClient(prevSelected => 
+          prevSelected && prevSelected.id === clientId 
+            ? { ...prevSelected, debt: updatedClient.debt, lastPaymentMonth: updatedClient.lastPaymentMonth }
+            : prevSelected
+        );
       }
     } catch (error) {
       console.error('Error updating client debt:', error);
@@ -243,7 +257,9 @@ const Clients = () => {
         await clientsAPI.delete(id);
         fetchClients(); // Refresca la paginación completa
       } catch (err) {
-        setError(err.message);
+        // Manejar diferentes tipos de errores
+        const errorMessage = err.response?.data?.error || err.message || 'Error desconocido al eliminar el cliente';
+        setError(errorMessage);
       }
     }
   };
@@ -262,7 +278,7 @@ const Clients = () => {
     setSelectedClient(client);
     setSaleFormData({
       amount: '',
-      description: '',
+      description: 'VARIOS',
     });
     setOpenSaleDialog(true);
   };
@@ -271,7 +287,7 @@ const Clients = () => {
     setOpenSaleDialog(false);
     setSaleFormData({
       amount: '',
-      description: '',
+      description: 'VARIOS',
     });
   };
 
@@ -279,7 +295,7 @@ const Clients = () => {
     setSelectedClient(client);
     setPaymentFormData({
       amount: '',
-      paymentMethod: '',
+      paymentMethod: 'EFECTIVO',
     });
     setOpenPaymentDialog(true);
   };
@@ -288,7 +304,26 @@ const Clients = () => {
     setOpenPaymentDialog(false);
     setPaymentFormData({
       amount: '',
-      paymentMethod: '',
+      paymentMethod: 'EFECTIVO',
+    });
+  };
+
+  const handleOpenReturnDialog = (client) => {
+    setSelectedClient(client);
+    setReturnFormData({
+      amount: '',
+      description: 'VARIOS',
+      returnReason: '',
+    });
+    setOpenReturnDialog(true);
+  };
+
+  const handleCloseReturnDialog = () => {
+    setOpenReturnDialog(false);
+    setReturnFormData({
+      amount: '',
+      description: 'VARIOS',
+      returnReason: '',
     });
   };
 
@@ -333,6 +368,30 @@ const Clients = () => {
       // Actualizar solo la deuda del cliente específico en lugar de refrescar toda la lista
       await updateClientDebt(selectedClient.id);
       handleClosePaymentDialog();
+      handleCloseDetailDialog();
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleCreateReturn = async () => {
+    if (!returnFormData.amount || !returnFormData.description) {
+      setError('Monto y descripción son requeridos');
+      return;
+    }
+
+    try {
+      const data = {
+        ...returnFormData,
+        amount: parseFloat(returnFormData.amount),
+        clientId: selectedClient.id,
+      };
+
+      await returnsAPI.create(data);
+      // Actualizar solo la deuda del cliente específico en lugar de refrescar toda la lista
+      await updateClientDebt(selectedClient.id);
+      handleCloseReturnDialog();
       handleCloseDetailDialog();
       setError(null);
     } catch (err) {
@@ -727,17 +786,22 @@ const Clients = () => {
               variant="contained" 
               color="success"
               startIcon={<ShoppingCartIcon />}
-            >
-              
-            </Button>
+              title="Nueva Venta"
+            />
             <Button 
               onClick={() => handleOpenPaymentDialog(selectedClient)}
               variant="contained" 
               color="info"
               startIcon={<PaymentIcon />}
-            >
-              
-            </Button>
+              title="Nuevo Pago"
+            />
+            <Button 
+              onClick={() => handleOpenReturnDialog(selectedClient)}
+              variant="contained" 
+              color="warning"
+              startIcon={<UndoIcon />}
+              title="Nueva Devolución"
+            />
           </Box>
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button onClick={handleCloseDetailDialog} variant="outlined">
@@ -751,9 +815,8 @@ const Clients = () => {
               variant="contained" 
               color="primary"
               startIcon={<EditIcon />}
-            >
-              
-            </Button>
+              title="Editar Cliente"
+            />
           </Box>
         </DialogActions>
       </Dialog>
@@ -869,6 +932,73 @@ const Clients = () => {
             disabled={!paymentFormData.amount || !paymentFormData.paymentMethod}
           >
             Registrar Pago
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de Registrar Devolución */}
+      <Dialog open={openReturnDialog} onClose={handleCloseReturnDialog} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ backgroundColor: '#fff3e0' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <UndoIcon sx={{ color: '#f57c00' }} />
+            <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#f57c00' }}>
+              Registrar Nueva Devolución
+            </Typography>
+          </Box>
+          {selectedClient && (
+            <Typography variant="body2" sx={{ color: '#666', mt: 1 }}>
+              Cliente: {selectedClient.name} | Deuda actual: € {selectedClient.debt?.toFixed(2) || '0.00'}
+            </Typography>
+          )}
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              fullWidth
+              label="Monto de la Devolución *"
+              type="number"
+              inputProps={{ step: '0.01', min: '0' }}
+              value={returnFormData.amount}
+              onChange={(e) => setReturnFormData({ ...returnFormData, amount: e.target.value })}
+              placeholder="Ej: 100.00"
+              required
+              autoFocus
+              size="small"
+              helperText={`Deuda actual del cliente: € ${selectedClient?.debt?.toFixed(2) || '0.00'}`}
+            />
+            <TextField
+              fullWidth
+              label="Descripción de la Devolución *"
+              multiline
+              rows={3}
+              value={returnFormData.description}
+              onChange={(e) => setReturnFormData({ ...returnFormData, description: e.target.value })}
+              placeholder="Ej: Devolución de producto defectuoso"
+              required
+              size="small"
+            />
+            <TextField
+              fullWidth
+              label="Motivo de la Devolución"
+              value={returnFormData.returnReason}
+              onChange={(e) => setReturnFormData({ ...returnFormData, returnReason: e.target.value })}
+              placeholder="Ej: Producto defectuoso, No conforme con el pedido"
+              size="small"
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ backgroundColor: '#f9f9f9', pt: 2 }}>
+          <Button onClick={handleCloseReturnDialog} variant="outlined">
+            Cancelar
+          </Button>
+          <Button 
+            onClick={handleCreateReturn} 
+            variant="contained" 
+            color="warning"
+            startIcon={<UndoIcon />}
+            disabled={!returnFormData.amount || !returnFormData.description}
+          >
+            Registrar Devolución
           </Button>
         </DialogActions>
       </Dialog>

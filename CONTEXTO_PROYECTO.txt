@@ -515,4 +515,20 @@ node scripts/migrate_historical_data.js
 -  Exportación CSV universal en todas las entidades
 
 ## RESULTADO FINAL
-Sistema completo de gestión de clientes con **todas las mejoras solicitadas implementadas**, instalación automática, documentación completa y preparado para producción. **Versión 2.1.0 - Completamente funcional**. 
+Sistema completo de gestión de clientes con **todas las mejoras solicitadas implementadas**, instalación automática, documentación completa y preparado para producción. **Versión 2.1.0 - Completamente funcional**.
+
+# =====================================================================
+# 🧠 MEMORIAS Y PREFERENCIAS DEL USUARIO
+# =====================================================================
+
+## MEMORIA: Cambios Manuales del Usuario
+**ID**: user_manual_changes_preference
+**Descripción**: El usuario prefiere que se le pregunte ANTES de modificar o quitar cambios que haya hecho manualmente en el código. Cuando vea modificaciones manuales del usuario, siempre preguntar antes de revertirlas o cambiarlas.
+**Tags**: user_preference, manual_changes, ask_before_modify
+
+## MEMORIA: Diseño Moderno de Botones
+**ID**: modern_button_design_preference
+**Descripción**: El usuario prefiere un diseño moderno con botones que contengan SOLO ÍCONOS sin texto, agregando tooltips (title) para accesibilidad. Ejemplo: botones de acción como Nueva Venta, Nuevo Pago, etc. deben mostrar solo el ícono correspondiente.
+**Tags**: ui_design, buttons, icons_only, modern_ui
+
+**NOTA IMPORTANTE**: Cuando el usuario haga cambios manuales en el código, SIEMPRE preguntarle antes de modificarlos. El usuario valora mucho mantener sus personalizaciones. 

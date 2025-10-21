@@ -45,6 +45,12 @@ import KPICard from '../components/charts/KPICard';
 const Analytics = () => {
   const { selectedSalesperson } = useSalesperson();
   
+  // Función helper para formatear números de manera segura
+  const formatCurrency = (value) => {
+    const num = parseFloat(value) || 0;
+    return `€${num.toFixed(2)}`;
+  };
+  
   // Estados para filtros
   const [dateFrom, setDateFrom] = useState(() => {
     const date = new Date();
@@ -80,6 +86,12 @@ const Analytics = () => {
       };
 
       const response = await analyticsAPI.getMonthlyData(params);
+      console.log('📊 Monthly data received:', response.data);
+      console.log('📊 First row types:', {
+        total_sales_amount: typeof response.data[0]?.total_sales_amount,
+        total_payments_amount: typeof response.data[0]?.total_payments_amount,
+        pending_debt: typeof response.data[0]?.pending_debt
+      });
       setMonthlyData(response.data);
     } catch (error) {
       console.error('Error fetching monthly data:', error);
@@ -493,16 +505,16 @@ const Analytics = () => {
                                 {row.total_sales}
                               </TableCell>
                               <TableCell align="right" sx={{ border: '1px solid #ddd', backgroundColor: '#f1f8e9', fontWeight: 'bold', color: '#2E7D32' }}>
-                                €{parseFloat(row.total_sales_amount || 0).toFixed(2)}
+                                {formatCurrency(row.total_sales_amount)}
                               </TableCell>
                               <TableCell align="center" sx={{ border: '1px solid #ddd', backgroundColor: '#e3f2fd', fontWeight: 'bold' }}>
                                 {row.total_payments}
                               </TableCell>
                               <TableCell align="right" sx={{ border: '1px solid #ddd', backgroundColor: '#e3f2fd', fontWeight: 'bold', color: '#1976d2' }}>
-                                €{parseFloat(row.total_payments_amount || 0).toFixed(2)}
+                                {formatCurrency(row.total_payments_amount)}
                               </TableCell>
                               <TableCell align="right" sx={{ border: '1px solid #ddd', backgroundColor: '#fff3e0', fontWeight: 'bold', color: parseFloat(row.pending_debt || 0) > 0 ? '#f57c00' : '#2E7D32' }}>
-                                €{parseFloat(row.pending_debt || 0).toFixed(2)}
+                                {formatCurrency(row.pending_debt)}
                               </TableCell>
                               <TableCell align="center" sx={{ border: '1px solid #ddd', fontWeight: 'bold' }}>
                                 {row.active_clients}
@@ -520,16 +532,16 @@ const Analytics = () => {
                               {monthlyData.reduce((sum, row) => sum + (row.total_sales || 0), 0)}
                             </TableCell>
                             <TableCell align="right" sx={{ fontWeight: 'bold', border: '1px solid #ddd', backgroundColor: '#c8e6c9', color: '#2E7D32' }}>
-                              €{monthlyData.reduce((sum, row) => sum + parseFloat(row.total_sales_amount || 0), 0).toFixed(2)}
+                              {formatCurrency(monthlyData.reduce((sum, row) => sum + parseFloat(row.total_sales_amount || 0), 0))}
                             </TableCell>
                             <TableCell align="center" sx={{ fontWeight: 'bold', border: '1px solid #ddd', backgroundColor: '#bbdefb' }}>
                               {monthlyData.reduce((sum, row) => sum + (row.total_payments || 0), 0)}
                             </TableCell>
                             <TableCell align="right" sx={{ fontWeight: 'bold', border: '1px solid #ddd', backgroundColor: '#bbdefb', color: '#1976d2' }}>
-                              €{monthlyData.reduce((sum, row) => sum + parseFloat(row.total_payments_amount || 0), 0).toFixed(2)}
+                              {formatCurrency(monthlyData.reduce((sum, row) => sum + parseFloat(row.total_payments_amount || 0), 0))}
                             </TableCell>
                             <TableCell align="right" sx={{ fontWeight: 'bold', border: '1px solid #ddd', backgroundColor: '#ffe0b2', color: '#f57c00' }}>
-                              €{monthlyData.reduce((sum, row) => sum + parseFloat(row.pending_debt || 0), 0).toFixed(2)}
+                              {formatCurrency(monthlyData.reduce((sum, row) => sum + parseFloat(row.pending_debt || 0), 0))}
                             </TableCell>
                             <TableCell align="center" sx={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
                               {monthlyData.reduce((sum, row) => sum + (row.active_clients || 0), 0)}
