@@ -75,6 +75,7 @@
    - Menú → Clientes → "Nuevo Cliente"
    - Nombre: "María López"
    - Teléfono: 600123456
+   - Dirección: "Calle Mayor 123, Madrid"
    - Vendedor: "Carlos García"
 
 5. **Crear venta**:

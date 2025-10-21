@@ -5,6 +5,7 @@ import Payment from './Payment.js';
 import MonthClosure from './MonthClosure.js';
 import HistoricalSale from './HistoricalSale.js';
 import HistoricalPayment from './HistoricalPayment.js';
+import Return from './Return.js';
 
 // Asociaciones
 Salesperson.hasMany(Client, { foreignKey: 'salespersonId', as: 'clients' });
@@ -16,8 +17,11 @@ Sale.belongsTo(Client, { foreignKey: 'clientId', as: 'client' });
 Client.hasMany(Payment, { foreignKey: 'clientId', as: 'payments' });
 Payment.belongsTo(Client, { foreignKey: 'clientId', as: 'client' });
 
+Client.hasMany(Return, { foreignKey: 'clientId', as: 'returns' });
+Return.belongsTo(Client, { foreignKey: 'clientId', as: 'client' });
+
 // Asociaciones para MonthClosure
 Salesperson.hasMany(MonthClosure, { foreignKey: 'salespersonId', as: 'closures' });
 MonthClosure.belongsTo(Salesperson, { foreignKey: 'salespersonId', as: 'salesperson' });
 
-export { Salesperson, Client, Sale, Payment, MonthClosure, HistoricalSale, HistoricalPayment };
+export { Salesperson, Client, Sale, Payment, MonthClosure, HistoricalSale, HistoricalPayment, Return };

@@ -110,6 +110,8 @@ const Clients = () => {
       setFormData({
         name: client.name,
         internalCode: client.internalCode || '',
+        phone: client.phone || '',
+        address: client.address || '',
         salespersonId: client.salespersonId || selectedSalesperson.id,
       });
     } else {
@@ -117,6 +119,8 @@ const Clients = () => {
       setFormData({
         name: '',
         internalCode: '',
+        phone: '',
+        address: '',
         salespersonId: selectedSalesperson.id,
       });
     }
@@ -129,6 +133,8 @@ const Clients = () => {
     setFormData({
       name: '',
       internalCode: '',
+      phone: '',
+      address: '',
       salespersonId: '',
     });
   };
@@ -147,6 +153,10 @@ const Clients = () => {
     try {
       const dataToSubmit = {
         ...formData,
+        name: formData.name.trim(),
+        internalCode: formData.internalCode.trim() || null,
+        phone: formData.phone.trim() || null,
+        address: formData.address.trim() || null,
       };
 
       if (editingId) {
@@ -418,6 +428,22 @@ const Clients = () => {
               placeholder="Ej: Juan García"
               required
               autoFocus
+              size="small"
+            />
+            <TextField
+              fullWidth
+              label="Teléfono"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              placeholder="Ej: 600123456"
+              size="small"
+            />
+            <TextField
+              fullWidth
+              label="Dirección"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              placeholder="Ej: Calle Mayor 123, Madrid"
               size="small"
             />
             <FormControl fullWidth size="small" required>

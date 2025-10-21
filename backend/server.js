@@ -9,6 +9,7 @@ import salespeopleRoutes from './routes/salespeople.js';
 import clientRoutes from './routes/clients.js';
 import saleRoutes from './routes/sales.js';
 import paymentRoutes from './routes/payments.js';
+import returnRoutes from './routes/returns.js';
 import dashboardRoutes from './routes/dashboard.js';
 import importRoutes from './routes/import.js';
 import monthClosureRoutes from './routes/monthClosures.js';
