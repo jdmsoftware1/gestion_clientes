@@ -377,17 +377,20 @@ const Dashboard = () => {
 
       {/* KPIs */}
       <Grid container spacing={2} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={2.4}>
           <DashboardCard title="Deuda Total" value={kpis?.totalDebt} currency />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={2.4}>
           <DashboardCard title={`Ventas ${periodLabel}`} value={kpis?.totalSalesLast30Days} currency />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={2.4}>
           <DashboardCard title={`Pagos ${periodLabel}`} value={kpis?.totalPaymentsLast30Days} currency />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <DashboardCard title="Neto (Ventas - Pagos)" value={(kpis?.totalSalesLast30Days || 0) - (kpis?.totalPaymentsLast30Days || 0)} currency />
+        <Grid item xs={12} sm={6} md={2.4}>
+          <DashboardCard title={`Devoluciones ${periodLabel}`} value={kpis?.totalReturnsLast30Days} currency />
+        </Grid>
+        <Grid item xs={12} sm={6} md={2.4}>
+          <DashboardCard title="Neto (Ventas - Pagos - Dev.)" value={(kpis?.totalSalesLast30Days || 0) - (kpis?.totalPaymentsLast30Days || 0) - (kpis?.totalReturnsLast30Days || 0)} currency />
         </Grid>
       </Grid>
 

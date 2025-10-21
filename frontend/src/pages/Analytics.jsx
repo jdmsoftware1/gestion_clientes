@@ -481,6 +481,12 @@ const Analytics = () => {
                             Total Pagos (€)
                           </TableCell>
                           <TableCell align="center" sx={{ fontWeight: 'bold', border: '1px solid #ddd', backgroundColor: '#fff3e0' }}>
+                            Devoluciones
+                          </TableCell>
+                          <TableCell align="center" sx={{ fontWeight: 'bold', border: '1px solid #ddd', backgroundColor: '#fff3e0' }}>
+                            Total Devoluciones (€)
+                          </TableCell>
+                          <TableCell align="center" sx={{ fontWeight: 'bold', border: '1px solid #ddd', backgroundColor: '#ffebee' }}>
                             Deuda Pendiente (€)
                           </TableCell>
                           <TableCell align="center" sx={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
@@ -491,7 +497,7 @@ const Analytics = () => {
                       <TableBody>
                         {monthlyData.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={7} align="center" sx={{ py: 4, color: '#999', fontStyle: 'italic' }}>
+                            <TableCell colSpan={9} align="center" sx={{ py: 4, color: '#999', fontStyle: 'italic' }}>
                               No hay datos disponibles para {new Date(selectedYear, selectedMonth - 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
                             </TableCell>
                           </TableRow>
@@ -513,7 +519,13 @@ const Analytics = () => {
                               <TableCell align="right" sx={{ border: '1px solid #ddd', backgroundColor: '#e3f2fd', fontWeight: 'bold', color: '#1976d2' }}>
                                 {formatCurrency(row.total_payments_amount)}
                               </TableCell>
-                              <TableCell align="right" sx={{ border: '1px solid #ddd', backgroundColor: '#fff3e0', fontWeight: 'bold', color: parseFloat(row.pending_debt || 0) > 0 ? '#f57c00' : '#2E7D32' }}>
+                              <TableCell align="center" sx={{ border: '1px solid #ddd', backgroundColor: '#fff3e0', fontWeight: 'bold' }}>
+                                {row.total_returns}
+                              </TableCell>
+                              <TableCell align="right" sx={{ border: '1px solid #ddd', backgroundColor: '#fff3e0', fontWeight: 'bold', color: '#f57c00' }}>
+                                {formatCurrency(row.total_returns_amount)}
+                              </TableCell>
+                              <TableCell align="right" sx={{ border: '1px solid #ddd', backgroundColor: '#ffebee', fontWeight: 'bold', color: parseFloat(row.pending_debt || 0) > 0 ? '#f57c00' : '#2E7D32' }}>
                                 {formatCurrency(row.pending_debt)}
                               </TableCell>
                               <TableCell align="center" sx={{ border: '1px solid #ddd', fontWeight: 'bold' }}>
@@ -540,7 +552,13 @@ const Analytics = () => {
                             <TableCell align="right" sx={{ fontWeight: 'bold', border: '1px solid #ddd', backgroundColor: '#bbdefb', color: '#1976d2' }}>
                               {formatCurrency(monthlyData.reduce((sum, row) => sum + parseFloat(row.total_payments_amount || 0), 0))}
                             </TableCell>
-                            <TableCell align="right" sx={{ fontWeight: 'bold', border: '1px solid #ddd', backgroundColor: '#ffe0b2', color: '#f57c00' }}>
+                            <TableCell align="center" sx={{ fontWeight: 'bold', border: '1px solid #ddd', backgroundColor: '#ffcc80' }}>
+                              {monthlyData.reduce((sum, row) => sum + (row.total_returns || 0), 0)}
+                            </TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 'bold', border: '1px solid #ddd', backgroundColor: '#ffcc80', color: '#f57c00' }}>
+                              {formatCurrency(monthlyData.reduce((sum, row) => sum + parseFloat(row.total_returns_amount || 0), 0))}
+                            </TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 'bold', border: '1px solid #ddd', backgroundColor: '#ffcdd2', color: '#f57c00' }}>
                               {formatCurrency(monthlyData.reduce((sum, row) => sum + parseFloat(row.pending_debt || 0), 0))}
                             </TableCell>
                             <TableCell align="center" sx={{ fontWeight: 'bold', border: '1px solid #ddd' }}>

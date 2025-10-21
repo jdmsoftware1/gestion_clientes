@@ -850,7 +850,9 @@ export const getMonthlyData = async (req, res) => {
           total_sales_amount: 12500.50,
           total_payments: 20,
           total_payments_amount: 8750.25,
-          pending_debt: 3750.25,
+          total_returns: 2,
+          total_returns_amount: 500.00,
+          pending_debt: 3250.25,
           active_clients: 15
         },
         {
@@ -859,7 +861,9 @@ export const getMonthlyData = async (req, res) => {
           total_sales_amount: 18750.75,
           total_payments: 28,
           total_payments_amount: 15200.00,
-          pending_debt: 3550.75,
+          total_returns: 3,
+          total_returns_amount: 750.25,
+          pending_debt: 2800.50,
           active_clients: 22
         },
         {
@@ -868,7 +872,9 @@ export const getMonthlyData = async (req, res) => {
           total_sales_amount: 9200.00,
           total_payments: 16,
           total_payments_amount: 7800.50,
-          pending_debt: 1399.50,
+          total_returns: 1,
+          total_returns_amount: 200.00,
+          pending_debt: 1199.50,
           active_clients: 12
         }
       ];
@@ -887,7 +893,9 @@ export const getMonthlyData = async (req, res) => {
           COALESCE(sales_data.total_sales_amount, 0)::numeric as total_sales_amount,
           COALESCE(payments_data.total_payments, 0)::integer as total_payments,
           COALESCE(payments_data.total_payments_amount, 0)::numeric as total_payments_amount,
-          COALESCE(sales_data.total_sales_amount, 0)::numeric - COALESCE(payments_data.total_payments_amount, 0)::numeric as pending_debt,
+          COALESCE(returns_data.total_returns, 0)::integer as total_returns,
+          COALESCE(returns_data.total_returns_amount, 0)::numeric as total_returns_amount,
+          COALESCE(sales_data.total_sales_amount, 0)::numeric - COALESCE(payments_data.total_payments_amount, 0)::numeric - COALESCE(returns_data.total_returns_amount, 0)::numeric as pending_debt,
           COALESCE(client_data.active_clients, 0)::integer as active_clients
         FROM salespeople sp
         LEFT JOIN (
@@ -916,12 +924,25 @@ export const getMonthlyData = async (req, res) => {
         ) payments_data ON sp.id = payments_data.salesperson_id
         LEFT JOIN (
           SELECT
+            c.salesperson_id,
+            COUNT(r.id)::integer as total_returns,
+            SUM(r.amount::numeric)::numeric as total_returns_amount
+          FROM returns r
+          JOIN clients c ON r.client_id = c.id
+          WHERE EXTRACT(YEAR FROM r.created_at) = $1
+            AND EXTRACT(MONTH FROM r.created_at) = $2
+            ${salespersonId && salespersonId !== 'TODOS' ? 'AND c.salesperson_id = $5' : ''}
+          GROUP BY c.salesperson_id
+        ) returns_data ON sp.id = returns_data.salesperson_id
+        LEFT JOIN (
+          SELECT
             salesperson_id,
             COUNT(DISTINCT c.id)::integer as active_clients
           FROM clients c
           LEFT JOIN sales s ON c.id = s.client_id AND EXTRACT(YEAR FROM s.created_at) = $1 AND EXTRACT(MONTH FROM s.created_at) = $2
           LEFT JOIN payments p ON c.id = p.client_id AND EXTRACT(YEAR FROM p.created_at) = $1 AND EXTRACT(MONTH FROM p.created_at) = $2
-          WHERE s.id IS NOT NULL OR p.id IS NOT NULL
+          LEFT JOIN returns r ON c.id = r.client_id AND EXTRACT(YEAR FROM r.created_at) = $1 AND EXTRACT(MONTH FROM r.created_at) = $2
+          WHERE s.id IS NOT NULL OR p.id IS NOT NULL OR r.id IS NOT NULL
           GROUP BY salesperson_id
         ) client_data ON sp.id = client_data.salesperson_id
         ORDER BY sp.name
@@ -929,7 +950,7 @@ export const getMonthlyData = async (req, res) => {
 
       const queryParams = [parseInt(year), parseInt(month)];
       if (salespersonId && salespersonId !== 'TODOS') {
-        queryParams.push(salespersonId, salespersonId);
+        queryParams.push(salespersonId, salespersonId, salespersonId);
       }
 
       const monthlyData = await sequelize.query(monthlyQuery, {
@@ -945,6 +966,8 @@ export const getMonthlyData = async (req, res) => {
           total_sales_amount: typeof monthlyData[0].total_sales_amount,
           total_payments: typeof monthlyData[0].total_payments,
           total_payments_amount: typeof monthlyData[0].total_payments_amount,
+          total_returns: typeof monthlyData[0].total_returns,
+          total_returns_amount: typeof monthlyData[0].total_returns_amount,
           pending_debt: typeof monthlyData[0].pending_debt,
           active_clients: typeof monthlyData[0].active_clients
         } : 'No data'
