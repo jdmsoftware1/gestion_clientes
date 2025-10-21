@@ -96,13 +96,28 @@
 
 ---
 
-## 📊 Funcionalidades Disponibles
+### 🎯 Funcionalidades Destacadas
 
-### Dashboard Principal
-- 📈 **KPIs en tiempo real**: Deuda total, ventas y pagos
-- 👥 **Ranking de vendedores** por rendimiento
-- 👤 **Clientes morosos** (>60 días sin pagar)
-- 🎯 **Oportunidades de venta** (deuda baja)
+#### 📋 **Gestión de Clientes Mejorada**
+- **Click en filas**: Ver detalles completos de cualquier cliente
+- **Botones de acción**: Registrar ventas/pagos directamente desde el detalle
+- **Campos completos**: Dirección y teléfono en creación y edición
+- **Paginación inteligente**: Solo 30 clientes inicialmente + "Cargar más"
+
+#### 📊 **Analytics Avanzados**
+- **Vista Mensual**: Tabla Excel-like con ventas/pagos por vendedor al mes
+- **Filtros mejorados**: Mes y año específicos para análisis mensual
+- **Exportación CSV**: Descarga datos de clientes, ventas, pagos y devoluciones
+
+#### 🔄 **Sistema de Devoluciones**
+- **Nueva tabla**: Gestión completa de devoluciones de productos
+- **Integración total**: Misma estructura que ventas con motivos personalizados
+
+#### 📥 **Exportación Universal**
+- **Clientes**: Datos completos con fechas y relaciones
+- **Ventas**: Histórico completo con clientes y montos
+- **Pagos**: Registro de cobros con métodos de pago
+- **Devoluciones**: Historial de devoluciones por cliente
 
 ### Gestión Completa
 - 🏪 **CRUD completo**: Vendedores, Clientes, Ventas, Pagos

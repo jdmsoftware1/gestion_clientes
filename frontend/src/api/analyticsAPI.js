@@ -50,6 +50,11 @@ const analyticsAPI = {
   // Obtener análisis de estacionalidad
   getSeasonalityAnalysis: (params = {}) => {
     return axiosInstance.get('/analytics/seasonality', { params });
+  },
+
+  // Obtener datos mensuales por vendedor (vista Excel-like)
+  getMonthlyData: (params = {}) => {
+    return axiosInstance.get('/analytics/monthly', { params });
   }
 };
 

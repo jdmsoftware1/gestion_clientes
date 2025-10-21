@@ -159,7 +159,6 @@ const Sales = () => {
             startIcon={<AddIcon />}
             onClick={() => handleOpenDialog()}
           >
-            Nueva Venta
           </Button>
         </Box>
       </Box>
@@ -207,7 +206,7 @@ const Sales = () => {
         <DialogContent sx={{ pt: 2, minWidth: '400px' }}>
           <Autocomplete
             fullWidth
-            sx={{ mb: 2 }}
+            sx={{ mb: 2 }} 
             options={clients}
             getOptionLabel={(option) => 
               `${option.internalCode ? `[${option.internalCode}] ` : ''}${option.name}`

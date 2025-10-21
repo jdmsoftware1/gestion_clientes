@@ -180,18 +180,30 @@ export const deleteClient = async (req, res) => {
 
 // Helper function to calculate client debt
 export async function calculateClientDebt(clientId) {
-  const result = await sequelize.query(
+  // Calcular total de ventas
+  const salesResult = await sequelize.query(
     `
-    SELECT COALESCE(SUM(s.amount), 0) - COALESCE(SUM(p.amount), 0) as debt
-    FROM clients c
-    LEFT JOIN sales s ON c.id = s.client_id
-    LEFT JOIN payments p ON c.id = p.client_id
-    WHERE c.id = ?
+    SELECT COALESCE(SUM(amount), 0) as total_sales
+    FROM sales
+    WHERE client_id = ?
     `,
     { replacements: [clientId], type: sequelize.QueryTypes.SELECT }
   );
 
-  return parseFloat(result[0]?.debt) || 0;
+  // Calcular total de pagos
+  const paymentsResult = await sequelize.query(
+    `
+    SELECT COALESCE(SUM(amount), 0) as total_payments
+    FROM payments
+    WHERE client_id = ?
+    `,
+    { replacements: [clientId], type: sequelize.QueryTypes.SELECT }
+  );
+
+  const totalSales = parseFloat(salesResult[0]?.total_sales) || 0;
+  const totalPayments = parseFloat(paymentsResult[0]?.total_payments) || 0;
+
+  return totalSales - totalPayments;
 }
 
 // Helper function to get last payment month

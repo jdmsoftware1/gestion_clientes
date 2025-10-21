@@ -23,6 +23,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Grid,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -74,12 +75,12 @@ const Clients = () => {
     if (!searchText.trim()) return displayedClients;
     
     const searchLower = searchText.toLowerCase();
-    return displayedClients.filter(client =>
+    return clients.filter(client =>
       client.name?.toLowerCase().includes(searchLower) ||
       client.internalCode?.toLowerCase().includes(searchLower) ||
       client.id?.toString().includes(searchLower)
     );
-  }, [displayedClients, searchText]);
+  }, [clients, displayedClients, searchText]);
 
   useEffect(() => {
     if (selectedSalesperson) {
@@ -133,6 +134,40 @@ const Clients = () => {
 
   const loadMoreClients = () => {
     fetchClients(true);
+  };
+
+  // Función para actualizar solo la deuda de un cliente específico
+  const updateClientDebt = async (clientId) => {
+    try {
+      const client = clients.find(c => c.id === clientId);
+      if (client) {
+        // Obtener la deuda actualizada del cliente
+        const response = await clientsAPI.getById(clientId);
+        const updatedClient = response.data;
+        
+        // Actualizar el cliente en el estado
+        setClients(prevClients => 
+          prevClients.map(c => 
+            c.id === clientId 
+              ? { ...c, debt: updatedClient.debt, lastPaymentMonth: updatedClient.lastPaymentMonth }
+              : c
+          )
+        );
+        
+        // También actualizar en displayedClients si está visible
+        setDisplayedClients(prevDisplayed => 
+          prevDisplayed.map(c => 
+            c.id === clientId 
+              ? { ...c, debt: updatedClient.debt, lastPaymentMonth: updatedClient.lastPaymentMonth }
+              : c
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error updating client debt:', error);
+      // Fallback: refrescar toda la lista
+      fetchClients();
+    }
   };
 
   const handleOpenDialog = (client = null) => {
@@ -271,7 +306,8 @@ const Clients = () => {
       };
 
       await salesAPI.create(data);
-      fetchClients(); // Para actualizar la deuda del cliente
+      // Actualizar solo la deuda del cliente específico en lugar de refrescar toda la lista
+      await updateClientDebt(selectedClient.id);
       handleCloseSaleDialog();
       handleCloseDetailDialog();
       setError(null);
@@ -294,7 +330,8 @@ const Clients = () => {
       };
 
       await paymentsAPI.create(data);
-      fetchClients(); // Para actualizar la deuda del cliente
+      // Actualizar solo la deuda del cliente específico en lugar de refrescar toda la lista
+      await updateClientDebt(selectedClient.id);
       handleClosePaymentDialog();
       handleCloseDetailDialog();
       setError(null);
@@ -328,7 +365,7 @@ const Clients = () => {
             startIcon={<AddIcon />}
             onClick={() => handleOpenDialog()}
           >
-            Nuevo Cliente
+
           </Button>
         </Box>
       </Box>
@@ -446,8 +483,8 @@ const Clients = () => {
             </Table>
           </TableContainer>
 
-          {/* Botón Cargar Más */}
-          {hasMoreClients && (
+          {/* Botón Cargar Más - Solo cuando no hay búsqueda */}
+          {hasMoreClients && !searchText.trim() && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 2 }}>
               <Button
                 variant="outlined"
@@ -464,6 +501,27 @@ const Clients = () => {
                   `Cargar Más Clientes (${clients.length - displayedClients.length} restantes)`
                 )}
               </Button>
+            </Box>
+          )}
+
+          {/* Indicador de resultados cuando hay búsqueda */}
+          {searchText.trim() && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 2 }}>
+              <Typography variant="body2" color="textSecondary">
+                {filteredClients.length === 0 
+                  ? `No se encontraron clientes que coincidan con "${searchText}"`
+                  : `${filteredClients.length} cliente${filteredClients.length !== 1 ? 's' : ''} encontrado${filteredClients.length !== 1 ? 's' : ''} de ${clients.length} total`
+                }
+              </Typography>
+            </Box>
+          )}
+
+          {/* Indicador de paginación cuando no hay búsqueda */}
+          {!searchText.trim() && clients.length > 0 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 2 }}>
+              <Typography variant="body2" color="textSecondary">
+                Mostrando {displayedClients.length} de {clients.length} clientes
+              </Typography>
             </Box>
           )}
         </>
@@ -670,7 +728,7 @@ const Clients = () => {
               color="success"
               startIcon={<ShoppingCartIcon />}
             >
-              Registrar Venta
+              
             </Button>
             <Button 
               onClick={() => handleOpenPaymentDialog(selectedClient)}
@@ -678,7 +736,7 @@ const Clients = () => {
               color="info"
               startIcon={<PaymentIcon />}
             >
-              Registrar Pago
+              
             </Button>
           </Box>
           <Box sx={{ display: 'flex', gap: 1 }}>
@@ -694,7 +752,7 @@ const Clients = () => {
               color="primary"
               startIcon={<EditIcon />}
             >
-              Editar Cliente
+              
             </Button>
           </Box>
         </DialogActions>

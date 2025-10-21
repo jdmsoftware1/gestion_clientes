@@ -159,7 +159,7 @@ const Payments = () => {
             startIcon={<AddIcon />}
             onClick={() => handleOpenDialog()}
           >
-            Nuevo Pago
+            
           </Button>
         </Box>
       </Box>

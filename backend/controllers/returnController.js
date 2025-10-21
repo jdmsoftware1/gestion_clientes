@@ -1,4 +1,4 @@
-import { Return, Client } from '../models/index.js';
+import { Return, Client, Salesperson } from '../models/index.js';
 
 // Get all returns for a salesperson
 export const getAllReturns = async (req, res) => {
@@ -10,12 +10,12 @@ export const getAllReturns = async (req, res) => {
     }
 
     const returns = await Return.findAll({
-      where: {},
       include: [{
         model: Client,
         as: 'client',
         where: { salespersonId },
-        required: true
+        required: true,
+        include: [{ model: Salesperson, as: 'salesperson' }]
       }],
       order: [['createdAt', 'DESC']]
     });
@@ -36,7 +36,7 @@ export const getReturnById = async (req, res) => {
       include: [{
         model: Client,
         as: 'client',
-        include: ['salesperson']
+        include: [{ model: Salesperson, as: 'salesperson' }]
       }]
     });
 
@@ -77,7 +77,7 @@ export const createReturn = async (req, res) => {
       include: [{
         model: Client,
         as: 'client',
-        include: ['salesperson']
+        include: [{ model: Salesperson, as: 'salesperson' }]
       }]
     });
 
@@ -109,7 +109,7 @@ export const updateReturn = async (req, res) => {
       include: [{
         model: Client,
         as: 'client',
-        include: ['salesperson']
+        include: [{ model: Salesperson, as: 'salesperson' }]
       }]
     });
 
